@@ -10,7 +10,7 @@ module.exports = {
         }
     }
   },
-  publicPath: process.env.NODE_ENV === 'production'
-    ? '/apps/admin/'
-    : '/',
+  // publicPath: process.env.NODE_ENV === 'production'
+  //   ? '/apps/admin/'
+  //   : '/',
 }
