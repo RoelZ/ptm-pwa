@@ -12,7 +12,7 @@
         <ion-row class="ion-justify-content-center">
           <ion-col size="12">
             <div class="ion-padding poster-cards">
-              <poster-card v-for="order in orders" :key="order.id" :poster="order" />
+                <poster-card v-for="order in orderData" :key="order.id" :poster="order" />
             </div>
           </ion-col>
         </ion-row>
@@ -28,40 +28,40 @@
 </template>
 
 <script>
+// import api from '@/api'
+import axios from 'axios'
 import PosterCard from '@/components/PosterCard.vue'
 
 export default {
   name: 'Orders',
   data () {
     return {
-      orders: [
-        {
-          id: 4000,
-          size: '50x70',
-          map: 'https://www.placethemoment.com/thumbs/5d5d0dc9af856.png',
-          design: 'snow',
-          express: true,
-          country: 'nl',
-          moment: 'demo',
-          subline: 'demo',
-          tagline: 'demo',
-          hash: 'demo'
-        },
-        {
-          id: 4100,
-          size: '30x40',
-          map: 'https://www.placethemoment.com/thumbs/5d692bfe30527.png',
-          design: 'granite',
-          express: false,
-          country: 'nl',
-          moment: 'where you and me, became us',
-          subline: '24 december 2016',
-          tagline: 'Brandweerkazerne Vlaardingen',
-          hash: 'demo'
-        }
-      ]
+      isLoading: false,
+      orderData: Array,
     }
+  },
+  methods: {
+    // async getApiOrders(){
+    //   try {
+    //     this.isLoading = true
+    //     const { orderData } = await api.getOrders()        
+    //   }
+    //   catch (error){
+    //     console.log(error)
+    //   }
+    //   finally {
+    //     this.isLoading = false
+    //   }
+    // }
   },  
+  created () {
+    axios
+      .get('./mock/orders.json')
+      // .get('/wp-json/wc/v3/orders')
+      .then(response => (this.orderData = response.data))
+  },
+  mounted () {    
+  },
   components: {
     PosterCard
   }

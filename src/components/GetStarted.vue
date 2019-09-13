@@ -6,6 +6,7 @@
           <ion-col class="ion-text-center">                
             <h1>Maak nu een poster</h1>
             <h3>en ontvang <strong>20% korting!</strong></h3>
+            <span>{{images}}</span>
           </ion-col>
         </ion-row>
         <ion-row>
@@ -18,7 +19,7 @@
       </ion-grid>
       <ion-slides ref="ptmSlides">
         <ion-slide v-for="(image, index) in images" :key="`img-${index}`">
-          <ion-img :src="image.images.standard_resolution.url"></ion-img>
+          <ion-img :src="image.url"></ion-img>
         </ion-slide>
       </ion-slides>
     </ion-content>
@@ -34,16 +35,16 @@ export default {
   data () {
     return {
       showOverlay: this.screen,
-      images: null,
+      images: Object,
       limit: 1
     }
   },
   created () {
     axios
       // .get('https://api.instagram.com/v1/users/self/media/recent/?access_token=6220567066.841f026.e17a85a247df4b02a31850a053db1eae')
-      .get('../mock/insta.json')
+      .get('../mock/ptm.json')
       .then(response => { 
-        this.images = response.data.data;
+        this.images = response.data;
       })
   },
   updated () {
