@@ -1,8 +1,8 @@
 {
   "name": "Place the Moment PWA",
   "short_name": "PTM PWA",
-  "theme_color": "#54575C",
-  "background_color": "#d8ae46",
+  "theme_color": "#10dc60",
+  "background_color": "#10dc60",
   "display": "fullscreen",
   "orientation": "portrait",
   "Scope": "/",

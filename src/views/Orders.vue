@@ -3,7 +3,7 @@
     <ion-content fullscreen padding>
       <ion-grid padding>
         <ion-row class="ion-justify-content-center">
-          <ion-col size="6" offset="3">
+          <ion-col xs-size="12" lg-size="6" lg-offset="3">
             <a href="/">
               <ion-img :src="'../img/logo-original-vector.svg'" />
             </a>
@@ -57,7 +57,6 @@ export default {
   created () {
     axios
       .get('./mock/orders.json')
-      // .get('/wp-json/wc/v3/orders')
       .then(response => (this.orderData = response.data))
   },
   mounted () {    
