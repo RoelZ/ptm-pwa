@@ -48,10 +48,10 @@ export default {
       return {
         size: this.poster.line_items[0].meta_data[0].value,
         design: this.poster.line_items[0].meta_data[1].value,
-        moment: this.poster.line_items[0].meta_data[7].value,
-        subline: this.poster.line_items[0].meta_data[8].value,
-        tagline: this.poster.line_items[0].meta_data[9].value,
-        map: this.poster.line_items[0].meta_data[10].value.substring(64, 9),
+        moment: this.poster.line_items[0].meta_data[8].value,
+        subline: this.poster.line_items[0].meta_data[9].value,
+        tagline: this.poster.line_items[0].meta_data[10].value,
+        map: this.poster.line_items[0].meta_data[11].value.substring(64, 9),
         hash: this.poster.cart_hash,
         country: this.poster.shipping.country,
         length: (this.poster.line_items.length > 1) ? '+' : '',
@@ -68,5 +68,14 @@ export default {
   ion-img {
     border-radius: 50%;
     overflow:hidden;
+  }
+  div {
+    position: relative;
+  }
+  ion-card:not(:first-child) {
+    top:20;
+    left:20;
+    z-index:-1;
+    position: absolute;
   }
 </style>

@@ -12,7 +12,7 @@
         <ion-row class="ion-justify-content-center">
           <ion-col size="12">
             <div class="ion-padding poster-cards">
-                <poster-card v-for="order in orderData" :key="order.id" :poster="order" />
+              <poster-card v-for="order in orderData" :key="order.id" :poster="order" />
             </div>
           </ion-col>
         </ion-row>
@@ -29,7 +29,7 @@
 
 <script>
 // import api from '@/api'
-import axios from 'axios'
+// import axios from 'axios'
 import PosterCard from '@/components/PosterCard.vue'
 
 export default {
@@ -55,9 +55,10 @@ export default {
     // }
   },  
   created () {
-    axios
-      .get('./mock/orders.json')
-      .then(response => (this.orderData = response.data))
+    this.$http.get('/orders')
+    .then(response => this.orderData = response.data)
+    .catch(error => console.log('error', error))
+    .finally(console.log('done'))
   },
   mounted () {    
   },

@@ -1,9 +1,8 @@
 import Vue from 'vue'
-// import Home from './views/Home.vue'
-import Srprs from './views/Srprs.vue'
-import Route from './views/Route.vue'
-import Stay from './views/Stay.vue'
+import Home from './views/Home.vue'
+import Orders from './views/Orders.vue'
 // import Event from './views/Event.vue'
+
 import { IonicVueRouter } from '@ionic/vue'
 
 Vue.use(IonicVueRouter)
@@ -12,25 +11,15 @@ export default new IonicVueRouter({
   mode: 'history',
   base: process.env.BASE_URL,
   routes: [
-    // {
-    //   path: '/',
-    //   name: 'home',
-    //   component: Home
-    // },
     {
       path: '/',
-      name: 'srprs',
-      component: Srprs
-    },
+      name: 'home',
+      component: Home
+    },    
     {
-      path: '/route',
-      name: 'route',
-      component: Route
-    },
-    {
-      path: '/route/stay',
-      name: 'stay',
-      component: Stay
+      path: '/orders',
+      name: 'orders',
+      component: Orders
     },
     // {
     //   path: '/orders',

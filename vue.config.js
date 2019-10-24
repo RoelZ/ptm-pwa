@@ -1,13 +1,10 @@
 module.exports = {
-  devServer: {    
-    disableHostCheck: true,
+  devServer: {
     proxy: {
-      "/wp-json/wc/v3": {
-        "target": 'https://www.placethemoment.com',
-        // "pathRewrite": { '^wp-json/wc/v3' : '' },
-        "changeOrigin": true,
-        // "secure": false
-        }
+      '/wp-json/': {
+        target: 'https://www.placethemoment.com/',
+        changeOrigin: true
+      }
     }
   },
   publicPath: process.env.NODE_ENV === 'production'
