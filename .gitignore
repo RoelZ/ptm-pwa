@@ -9,7 +9,7 @@ node_modules
 .env.local
 .env.*.local
 wc.config.js
-
+/docs
 
 # Log files
 npm-debug.log*
