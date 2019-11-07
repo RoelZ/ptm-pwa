@@ -45,6 +45,7 @@ export default {
   },
   computed: {
     posterItem(){
+      console.log(this.poster)
       let express = RegExp('Express*').test(this.poster.shipping_lines[0].method_title);
       let size = (this.poster.line_items[0].meta_data[0].value == '30x40') ? 'S' : 'L'
 
@@ -54,6 +55,7 @@ export default {
       return {
         size,
         design: this.poster.line_items[0].meta_data[1].value,
+        marker: this.poster.line_items[0].meta_data[7].value,
         moment: this.poster.line_items[0].meta_data[8].value,
         subline: this.poster.line_items[0].meta_data[9].value,
         tagline: this.poster.line_items[0].meta_data[10].value,
@@ -92,10 +94,17 @@ export default {
       .catch(error => console.log('error', error))
       .finally(console.log('PSD done'))      
     },
+    rgb16(color){
+      return (color === 'granite') ? { "rgb": { "blue": 10794, "green": 11180, "red": 11822 } }
+           : (color === 'mint') ? { "rgb": { "blue": 14264, "green": 20689, "red": 17605 } }
+           : (color === 'snow') ? { "rgb": { "blue": 32768, "green": 32768, "red": 32768 } }
+           : (color === 'black') ? { "rgb": { "blue": 0, "green": 0, "red": 0 } }
+           : { "rgb": { "blue": 27756, "green": 22359, "red": 8995 } }    
+    },
     textColor(design) {
       return (design === 'snow' || design === 'honey') ? { "rgb": { "blue": 0, "green": 0, "red": 0 } }
            : (design === 'granite' || design === 'mint') ? { "rgb": { "blue": 32768, "green": 32768, "red": 32768 } }
-           : { "rgb": { "blue": 11822, "green": 11180, "red": 10794 } }
+           : { "rgb": { "blue": 10794, "green": 11180, "red": 11822 } }
     },
     designNumber(design){
       return (design === 'snow') ? 0 
@@ -106,7 +115,7 @@ export default {
     },
     adobeObject(poster){
       let snow = (poster.design === 'snow') ? true : false
-      let moon = (this.poster.design === 'moon') ? true : false
+      let moon = (poster.design === 'moon') ? true : false
       let granite = (poster.design === 'granite') ? true : false
       let mint = (poster.design === 'mint') ? true : false
       let honey = (poster.design === 'honey') ? true : false
@@ -122,9 +131,48 @@ export default {
         "options":{
           "layers":[
             {
-              "edit":{},        
-              "name": "Pin",              
-              "id":14
+              "id":281,
+              "edit":{},
+              "name": "MAP",
+              "input":{
+                "href":`/files/PTM/Maps/${this.id}.png`,
+                "storage":"adobe"
+              },
+              "bounds":{
+                "height":4729,
+                "left":661,
+                "top":945,
+                "width":4728
+              },
+            },
+            {
+              "id":590,
+              "edit":{},
+              "name": "MAP",
+              "input":{
+                "href":`/files/PTM/Maps/${this.id}.png`,
+                "storage":"adobe"
+              },
+              "bounds":{
+                "height":2877,
+                "left":404,
+                "top":523,
+                "width":2877
+              },
+            },
+            {
+              "id":749,
+              "name": "PIN",
+              "fill": {
+                "solidColor": this.rgb16(poster.marker)
+              },
+            },
+            {
+              "id":752,
+              "name": "PIN",
+              "fill": {
+                "solidColor": this.rgb16(poster.marker)
+              },
             },
             {
               "id":247,
@@ -176,6 +224,16 @@ export default {
               "edit":{},        
               "name": "PREFIX",
               "text":{
+                "content": "PTM",
+                "characterStyles": [{ "fontColor": this.textColor(poster.design) }]
+              },
+            },
+            {
+              "id":249,
+              "edit":{},        
+              "name": "FORMAT",
+              "text":{
+                "content": "-   -         -  -     -",
                 "characterStyles": [{ "fontColor": this.textColor(poster.design) }]
               },
             },
@@ -259,6 +317,12 @@ export default {
             "width":0,
             "overwrite":true,
             "quality":3
+          },
+          {
+            "href":`/files/PTM/Templates/outputs/PTM-${poster.size}-${this.id}-${this.designNumber(poster.design)}-${poster.country}-${poster.language}.psd`,
+            "storage":"adobe",
+            "type":"vnd.adobe.photoshop",
+            "overwrite":true
           }
         ]
       }

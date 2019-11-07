@@ -1,6 +1,7 @@
 import Vue from 'vue'
 import Home from './views/Home.vue'
 import Orders from './views/Orders.vue'
+import Editor from './views/Editor.vue'
 // import Event from './views/Event.vue'
 
 import { IonicVueRouter } from '@ionic/vue'
@@ -21,6 +22,11 @@ export default new IonicVueRouter({
       name: 'orders',
       component: Orders
     },
+    {
+      path: '/editor',
+      name: 'editor',
+      component: Editor
+    }
     // {
     //   path: '/orders',
     //   name: 'orders',
