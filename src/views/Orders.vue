@@ -43,7 +43,7 @@
 
         <ion-row class="ion-justify-content-center">
           <ion-col size="12">            
-            <div class="ion-padding poster-cards">              
+            <div class="ion-padding poster-cards">
               <poster-card v-for="order in orderData" :key="order.id" :poster="order" />
             </div>
           </ion-col>
@@ -136,10 +136,10 @@ export default {
             (poster[0].value == "50x70") ? "L" : "S",
             this.getStyleId(poster[1].value),
             order.shipping.country,
-            "nl",
-            poster[8].value.replace('"', '""'),
-            poster[9].value.replace('"', '""'),
-            poster[10].value.replace('"', '""'),
+            poster[13].value,
+            `"${poster[8].value.replace('"','""')}"`,
+            `"${poster[9].value.replace('"','""')}"`,
+            `"${poster[10].value.replace('"','""')}"`,
             `D:\\NextUp\\${order.id}.png`,
             poster[1].value == "granite",
             poster[1].value == "honey",

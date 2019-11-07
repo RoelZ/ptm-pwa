@@ -45,24 +45,28 @@ export default {
   },
   computed: {
     posterItem(){
-      console.log(this.poster)
       let express = RegExp('Express*').test(this.poster.shipping_lines[0].method_title);
       let size = (this.poster.line_items[0].meta_data[0].value == '30x40') ? 'S' : 'L'
 
       // onderstaande gaat fout wanneer er een line_item mist (meta_data[7], meta_data[8], etc)
       // onderstaande mist meerder items in cart (line_items[0])
+      // (this.poster.line_items.length)
+
+      let oldOrder = 0
+      if(this.poster.line_items[0].meta_data[2].key !== '_fly_woo_discount_price_rules')
+        oldOrder = 1
 
       return {
         size,
         design: this.poster.line_items[0].meta_data[1].value,
-        marker: this.poster.line_items[0].meta_data[7].value,
-        moment: this.poster.line_items[0].meta_data[8].value,
-        subline: this.poster.line_items[0].meta_data[9].value,
-        tagline: this.poster.line_items[0].meta_data[10].value,
-        lowres: this.poster.line_items[0].meta_data[11].value.substring(64, 9),
-        highres: this.poster.line_items[0].meta_data[12].value.match(/"(.*?)"/gi)[0].slice(1,-1),
+        marker: this.poster.line_items[0].meta_data[this.metaData(7, oldOrder)].value,
+        moment: this.poster.line_items[0].meta_data[this.metaData(8, oldOrder)].value,
+        subline: this.poster.line_items[0].meta_data[this.metaData(9, oldOrder)].value,
+        tagline: this.poster.line_items[0].meta_data[this.metaData(10, oldOrder)].value,
+        lowres: this.poster.line_items[0].meta_data[this.metaData(11, oldOrder)].value.substring(64, 9),
+        highres: this.poster.line_items[0].meta_data[this.metaData(12, oldOrder)].value.match(/"(.*?)"/gi)[0].slice(1,-1),
         hash: this.poster.cart_hash,
-        language: this.poster.line_items[0].meta_data[13] ? this.poster.line_items[0].meta_data[13].value : 'nl',
+        language: this.poster.line_items[0].meta_data[this.metaData(13, oldOrder)] ? this.poster.line_items[0].meta_data[this.metaData(13, oldOrder)].value : 'nl',
         country: this.poster.shipping.country,
         length: (this.poster.line_items.length > 1) ? '+' : '',
         shipping: this.poster.shipping_lines[0].method_title,
@@ -73,6 +77,9 @@ export default {
     },
   },
   methods: {
+    metaData(num, substract){      
+      return substract ? num - substract : num
+    },
     posterImage(poster){
       fetch(poster.highres)
         .then(resp => resp.blob())
