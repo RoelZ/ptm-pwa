@@ -11,18 +11,18 @@
         </ion-row>
 
         <ion-row class="ion-justify-content-center">
-          <ion-col size="4">
+          <ion-col size="12" size-md="4">
             <ion-searchbar @ionInput="getOrder($event.target.value)" type="number" inputmode="numeric"></ion-searchbar>
           </ion-col>
         </ion-row>
         <ion-row class="ion-justify-content-center">
-          <ion-col size="2" offset="2">
+          <ion-col size="6" size-md="2" offset-md="1">
             <IonSelectVue v-model="settings.status" :value="settings.status" @ionChange="viewStatus()">
               <ion-select-option value="processing">Processing</ion-select-option>
               <ion-select-option value="completed">Completed</ion-select-option>
             </IonSelectVue >
           </ion-col>
-          <ion-col size="2">
+          <ion-col size="6" size-md="2">
             <ion-button class="ion-no-margin" @click="getDataset">DataSet</ion-button>
           </ion-col>
         </ion-row>
