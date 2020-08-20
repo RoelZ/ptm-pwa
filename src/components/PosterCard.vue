@@ -1,27 +1,33 @@
 <template>
-  <div>
-    <ion-card class="ion-padding" :color="posterItem.design" v-for="item in poster.line_items" :key="item.id">
-      <ion-chip :color="posterItem.labelColor" :outline="!posterItem.express">
-        <ion-label>{{poster.id}}{{posterItem.length}}</ion-label>
-      </ion-chip>
-      <ion-chip outline>
-        <ion-label>{{posterItem.size}}</ion-label>
-      </ion-chip>
-      <ion-chip outline>
-        <ion-label>{{posterItem.country}}</ion-label>
-      </ion-chip>
-      <ion-img :src="posterItem.lowres" class="ion-margin-top"></ion-img>
-      <ion-card-header class="ion-text-center">
-        <ion-card-title>{{posterItem.moment}}</ion-card-title>
-        <ion-card-subtitle>{{posterItem.subline}}</ion-card-subtitle>
-        <ion-card-subtitle>{{posterItem.tagline}}</ion-card-subtitle>
+  <div class="container">
+    <ion-card :color="posterItem.design" v-for="item in poster.line_items" :key="item.id">
+      <ion-card-header class="ion-text-start">        
+        <ion-chip :color="item.labelColor" :outline="!item.express">
+          <ion-label>{{posterItem.id}}</ion-label>
+        </ion-chip>
+        <ion-chip outline>
+          <ion-label>{{posterItem.size}}</ion-label>
+        </ion-chip>
+        <ion-chip outline>
+          <ion-label>{{posterItem.country}}</ion-label>
+        </ion-chip>
+        <ion-chip class="ion-color ion-color-danger" v-if="posterItem.notes" @click="createModal()">
+          <ion-icon name="mail-unread" class="ion-no-margin"></ion-icon>
+        </ion-chip>        
       </ion-card-header>
 
-      <ion-card-content class="ion-no-padding">
-        <ion-button size="small" v-on:click="posterImage(posterItem)">Image</ion-button>
-        <ion-button size="small">Notes</ion-button>
-        <ion-button size="small" v-on:click="createPDF(posterItem)">PSD</ion-button>
+      <ion-card-content class="ion-text-center" @click="presentActionSheet(posterItem)">
+          <ion-img :src="posterItem.lowres" class="ion-margin-horizontal"></ion-img>
+          <div class="ion-margin-vertical">
+            <ion-card-title>{{posterItem.moment}}</ion-card-title>
+            <ion-card-subtitle>{{posterItem.subline}}</ion-card-subtitle>
+            <ion-card-subtitle>{{posterItem.tagline}}</ion-card-subtitle>
+          </div>
       </ion-card-content>
+        
+      <div class="card-overlay" v-if="loading">
+        <ion-spinner name="dots"></ion-spinner>
+      </div>
     </ion-card>
   </div>
 </template>
@@ -31,42 +37,59 @@
 </style>
 
 <script>
+import Vue from 'vue'
+import OrderComments from '@/components/OrderComments';
+import { addIcons } from "ionicons";
+import { cube, cloudy, mailUnread } from "ionicons/icons";
+
+addIcons({
+  "md-cube": cube.md,
+  "md-cloudy": cloudy.md,
+  "md-mail-unread": mailUnread.md
+});
 
 export default {
   name: 'PosterCard',
   props: {
-    poster: Object
+    lineItem: {
+      type: Number,
+      default: 0
+    },
+    poster: Object,
+    shipping: Object
   },
   data (){
     return {      
-      id: this.poster.id,
-      showFront: true
+      // id: this.poster.id,
+      flipped: false,
+      loading: false
     }
   },
   computed: {
     posterItem(){
       let express = RegExp('Express*').test(this.poster.shipping_lines[0].method_title);
-      let size = (this.poster.line_items[0].meta_data[0].value == '30x40') ? 'S' : 'L'
+      let size = (this.poster.line_items[this.lineItem].meta_data[0].value == '30x40') ? 'S' : 'L'
 
       // onderstaande gaat fout wanneer er een line_item mist (meta_data[7], meta_data[8], etc)
-      // onderstaande mist meerder items in cart (line_items[0])
+      // onderstaande mist meerder items in cart (line_items[this.lineItem])
       // (this.poster.line_items.length)
 
       let oldOrder = 0
-      if(this.poster.line_items[0].meta_data[2].key !== '_fly_woo_discount_price_rules')
+      if(this.poster.line_items[this.lineItem].meta_data[2].key !== '_fly_woo_discount_price_rules')
         oldOrder = 1
 
       return {
+        id: this.poster.id,
         size,
-        design: this.poster.line_items[0].meta_data[1].value,
-        marker: this.poster.line_items[0].meta_data[this.metaData(7, oldOrder)].value,
-        moment: this.poster.line_items[0].meta_data[this.metaData(8, oldOrder)].value,
-        subline: this.poster.line_items[0].meta_data[this.metaData(9, oldOrder)].value,
-        tagline: this.poster.line_items[0].meta_data[this.metaData(10, oldOrder)].value,
-        lowres: this.poster.line_items[0].meta_data[this.metaData(11, oldOrder)].value.substring(64, 9),
-        highres: this.poster.line_items[0].meta_data[this.metaData(12, oldOrder)].value.match(/"(.*?)"/gi)[0].slice(1,-1),
+        design: this.poster.line_items[this.lineItem].meta_data[1].value,
+        marker: this.poster.line_items[this.lineItem].meta_data[this.metaData(7, oldOrder)].value,
+        moment: this.poster.line_items[this.lineItem].meta_data[this.metaData(8, oldOrder)].value,
+        subline: this.poster.line_items[this.lineItem].meta_data[this.metaData(9, oldOrder)].value,
+        tagline: this.poster.line_items[this.lineItem].meta_data[this.metaData(10, oldOrder)].value,
+        lowres: this.poster.line_items[this.lineItem].meta_data[this.metaData(11, oldOrder)].value.substring(64, 9),
+        highres: this.poster.line_items[this.lineItem].meta_data[this.metaData(12, oldOrder)].value.match(/"(.*?)"/gi)[0].slice(1,-1),
         hash: this.poster.cart_hash,
-        language: this.poster.line_items[0].meta_data[this.metaData(13, oldOrder)] ? this.poster.line_items[0].meta_data[this.metaData(13, oldOrder)].value : 'nl',
+        language: this.poster.line_items[this.lineItem].meta_data[this.metaData(13, oldOrder)] ? this.poster.line_items[this.lineItem].meta_data[this.metaData(13, oldOrder)].value : 'nl',
         country: this.poster.shipping.country,
         length: (this.poster.line_items.length > 1) ? '+' : '',
         shipping: this.poster.shipping_lines[0].method_title,
@@ -74,11 +97,35 @@ export default {
         labelColor: express ? 'danger' : '',        
         notes: this.poster.customer_note
       }
-    },
+    },    
   },
   methods: {
+    openToast(status, message, buttons){
+      return this.$ionic.toastController
+        .create({
+          color: (status === 'failed') ? 'danger' : 'primary',
+          message,
+          showCloseButton: buttons ? false : true,
+          buttons
+        })
+        .then(t => t.present())
+    },
     metaData(num, substract){      
       return substract ? num - substract : num
+    },
+    createModal() {
+      let ComponentClass = Vue.extend(OrderComments)
+      let ComponentInstance = new ComponentClass({
+          propsData: { order: this.id, customerNote: this.posterItem.notes }
+      })
+      ComponentInstance.$mount()
+
+      this.$ionic.modalController.create({
+        component: ComponentInstance.$el
+      }).then(modal => {
+        modal.present();
+        // currentModal = modal;
+      });
     },
     posterImage(poster){
       fetch(poster.highres)
@@ -88,18 +135,112 @@ export default {
           const a = document.createElement('a');
           a.style.display = 'none';
           a.href = url;
-          a.download = this.id+'.png';
+          a.download = poster.id+'.png';
           document.body.appendChild(a);
           a.click();
           window.URL.revokeObjectURL(url);
         })
         .catch(() => alert('Probleem bij het ophalen..')); 
     },
-    createPDF(poster){    
-      this.$photoshop.post('/renditionCreate',this.adobeObject(poster))
-      .then(response => console.log('PSD good' + response))
-      .catch(error => console.log('error', error))
-      .finally(console.log('PSD done'))      
+    createMap(poster){
+      this.$photoshop.post('/renditionCreate',this.mapObject(poster.id, poster.highres))
+      .then(response => this.getAdobeStatus(response.data._links.self.href));
+    },
+    async createPDF(poster){
+      this.loading = true
+      console.log(this.adobeObject(poster));
+      const createJob = await this.$photoshop.post('/renditionCreate',this.adobeObject(poster));
+      const statusLink = await createJob.data._links.self.href;
+      setTimeout(() => {
+        this.getAdobeStatus(statusLink);        
+      }, 2500);
+    },
+    async getAdobeStatus(url){       
+      const getStatus = await this.$photoshop.get(url)
+      getStatus.data.outputs.forEach(item => {
+        console.log(item.status)
+        if(item.status === 'running'){
+          this.openToast(item.status, 'Creating PSD  <ion-spinner name="dots"></ion-spinner>', [{ 
+            text: 'Check again', handler: () => {
+              this.getAdobeStatus(url);
+            } 
+          }])
+        }
+        else if(item.status === 'failed'){
+          this.loading = false
+          item.errors.details.forEach(error => this.presentAlert(item.errors.title, error.name, error.reason));
+        }
+        else if(item.status === 'succeeded'){
+          this.loading = false
+          this.openToast(item.status, 'Job completed');
+        }
+      });
+    },
+    presentActionSheet(poster) {
+      return this.$ionic.actionSheetController
+        .create({
+          header: 'Actions',
+          buttons: [
+            {
+              text: 'Map poster klaarmaken',
+              icon: 'cloudy',
+              handler: () => {
+                this.createMap(poster)
+              },
+            },
+            {
+              text: 'Drukwerkbestand',
+              icon: 'cloudy',
+              handler: () => {
+                this.createPDF(poster)
+              },
+            },
+            {
+              text: 'Verzendlabel',
+              icon: 'cube',
+              handler: () => {
+                this.sc_parcel_label(poster)
+              },
+            },
+            {
+              text: 'Annuleer',
+              icon: 'close',
+              role: 'cancel',
+              handler: () => {
+                console.log('Cancel clicked')
+              },
+            },
+          ],
+        })
+        .then(a => a.present())
+    },
+    sc_orderinfo(poster){
+      this.$sendcloud.get(`/integrations/52134/shipments?order_number=${poster.id}`)
+      .then(response => this.presentAlert('SendCloud API', 'Order details', `<pre>${response}</pre>`));
+    },
+    async sc_parcel_label(poster){
+      const parcel_obj = await this.$sendcloud.get(`/parcels/?order_number=${poster.id}`)
+      
+      parcel_obj.data.parcels.forEach(parcel => {
+        this.$sendcloud.get(`/parcels/${parcel.id}/documents/label`, { responseType: 'blob' })
+        .then(response => {
+          let blob = new Blob([response.data], { type: 'application/pdf' });
+          let link = document.createElement('a')
+          link.href = window.URL.createObjectURL(blob)
+          link.download = 'verzendlabel.pdf'
+          link.click();
+        })
+      })
+    },
+    presentAlert(header, subHeader, message) {
+      return this.$ionic.alertController
+        .create({
+          header,
+          subHeader,
+          message,
+          buttons: ['OK'],
+        })
+        .then(a => a.present())
     },
     rgb16(color){
       return (color === 'granite') ? { "rgb": { "blue": 10794, "green": 11180, "red": 11822 } }
@@ -108,10 +249,17 @@ export default {
            : (color === 'black') ? { "rgb": { "blue": 0, "green": 0, "red": 0 } }
            : { "rgb": { "blue": 27756, "green": 22359, "red": 8995 } }    
     },
+    rgb(color){
+      return (color === 'granite') ? { "rgb": { "blue": 92, "green": 87, "red": 84 } }
+           : (color === 'mint') ? { "rgb": { "blue": 137, "green": 161, "red": 111 } }
+           : (color === 'snow') ? { "rgb": { "blue": 255, "green": 255, "red": 255 } }
+           : (color === 'black') ? { "rgb": { "blue": 0, "green": 0, "red": 0 } }
+           : { "rgb": { "blue": 70, "green": 174, "red": 216 } }    
+    },
     textColor(design) {
-      return (design === 'snow' || design === 'honey') ? { "rgb": { "blue": 0, "green": 0, "red": 0 } }
-           : (design === 'granite' || design === 'mint') ? { "rgb": { "blue": 32768, "green": 32768, "red": 32768 } }
-           : { "rgb": { "blue": 10794, "green": 11180, "red": 11822 } }
+      return (design === 'snow' || design === 'honey') ? this.rgb('black')
+           : (design === 'granite' || design === 'mint') ? this.rgb('snow')
+           : this.rgb('granite')
     },
     designNumber(design){
       return (design === 'snow') ? 0 
@@ -119,6 +267,90 @@ export default {
            : (design === 'granite') ? 2 
            : (design === 'mint') ? 3 
            : 4
+    },
+    editMap(poster){
+      console.log(poster.design)
+      let suffix = '-'+String.fromCharCode(65 + this.lineItem);
+      if(poster.size === 'L'){
+        return {
+          "id":281,
+          "edit":{},
+          "name": "MAP",
+          "input":{
+            "href":`/files/PTM/Maps/${poster.id}-${this.designNumber(poster.design)}${suffix}.png`,
+            "storage":"adobe"
+          },
+          "bounds":{
+            "height":4729,
+            "left":661,
+            "top":945,
+            "width":4728
+          },
+        }       
+      }      
+      else if(poster.size === 'S'){
+        return {
+          "id":590,
+          "edit":{},
+          "name": "MAP",
+          "input":{
+            "href":`/files/PTM/Maps/${poster.id}-${this.designNumber(poster.design)}${suffix}.png`,
+            "storage":"adobe"
+          },
+          "bounds":{
+            "height":2877,
+            "left":404,
+            "top":523,
+            "width":2877
+          },
+        }
+      }
+      else
+        return {}
+    },
+    editPin(poster){
+      if(poster.size === 'L'){
+        return {
+          "id":749,
+          "edit":{},
+          "name": "PIN",
+          "fill": {
+            "solidColor": this.rgb(poster.marker)
+          },
+        }
+      }
+      else if(poster.size === 'S'){
+        return {
+          "id":752,
+          "edit":{},
+          "name": "PIN",
+          "fill": {
+            "solidColor": this.rgb(poster.marker)
+          },
+        }
+      }
+      else
+        return {}
+    },
+    mapObject(posterid, posterurl){
+      return {
+        "inputs": [
+          {
+            "href": posterurl,
+            "storage": "external"
+          }
+        ],
+        "outputs":[
+          {
+            "href":`/files/PTM/Maps/${posterid}-${this.designNumber(this.posterItem.design)}-${String.fromCharCode(65 + this.lineItem)}.png`,
+            "storage":"adobe",
+            "type":"image/png",
+            "width":0,
+            "overwrite":true,
+            "compression":"small"
+          }
+        ]
+      }
     },
     adobeObject(poster){
       let snow = (poster.design === 'snow') ? true : false
@@ -136,58 +368,31 @@ export default {
           }
         ],
         "options":{
+          "fonts": [
+            {
+              "storage": "adobe",
+              "href": "/files/Fonts/Open_Sans/OpenSans-Light.ttf"
+            },
+            {
+              "storage": "adobe",
+              "href": "/files/Fonts/Open_Sans_Condensed/OpenSansCondensed-Light.ttf"
+            }
+          ],
           "layers":[
-            {
-              "id":281,
-              "edit":{},
-              "name": "MAP",
-              "input":{
-                "href":`/files/PTM/Maps/${this.id}.png`,
-                "storage":"adobe"
-              },
-              "bounds":{
-                "height":4729,
-                "left":661,
-                "top":945,
-                "width":4728
-              },
-            },
-            {
-              "id":590,
-              "edit":{},
-              "name": "MAP",
-              "input":{
-                "href":`/files/PTM/Maps/${this.id}.png`,
-                "storage":"adobe"
-              },
-              "bounds":{
-                "height":2877,
-                "left":404,
-                "top":523,
-                "width":2877
-              },
-            },
-            {
-              "id":749,
-              "name": "PIN",
-              "fill": {
-                "solidColor": this.rgb16(poster.marker)
-              },
-            },
-            {
-              "id":752,
-              "name": "PIN",
-              "fill": {
-                "solidColor": this.rgb16(poster.marker)
-              },
-            },
+            this.editMap(poster),
+            this.editPin(poster),
             {
               "id":247,
               "edit":{},        
               "name": "LANGUAGE",
               "text":{
                 "content": poster.language,
-                "characterStyles": [{ "fontColor": this.textColor(poster.design) }]
+                "characterStyles": [
+                  { 
+                    "fontColor": this.textColor(poster.design),
+                    "fontName": "OpenSans-Light"
+                  }
+                ]
               },
             },
             {
@@ -196,7 +401,12 @@ export default {
               "name": "COUNTRY",
               "text":{
                 "content": poster.country,
-                "characterStyles": [{ "fontColor": this.textColor(poster.design) }]
+                "characterStyles": [
+                  { 
+                    "fontColor": this.textColor(poster.design),
+                    "fontName": "OpenSans-Light"
+                  }
+                ]
               },
             },
             {
@@ -205,7 +415,12 @@ export default {
               "name": "SIZE",
               "text":{
                 "content": poster.size,
-                "characterStyles": [{ "fontColor": this.textColor(poster.design) }]
+                "characterStyles": [
+                  { 
+                    "fontColor": this.textColor(poster.design),
+                    "fontName": "OpenSans-Light"
+                  }
+                ]
               },
             },
             {
@@ -214,7 +429,12 @@ export default {
               "name": "DESIGN",
               "text":{
                 "content": this.designNumber(poster.design),
-                "characterStyles": [{ "fontColor": this.textColor(poster.design) }]
+                "characterStyles": [
+                  { 
+                    "fontColor": this.textColor(poster.design),
+                    "fontName": "OpenSans-Light"
+                  }
+                ]
               },
             },
             {
@@ -222,8 +442,13 @@ export default {
               "edit":{},        
               "name": "ORDER ID",
               "text":{
-                "content": this.id,
-                "characterStyles": [{ "fontColor": this.textColor(poster.design) }]
+                "content": poster.id,
+                "characterStyles": [
+                  { 
+                    "fontColor": this.textColor(poster.design),
+                    "fontName": "OpenSans-Light"
+                  }
+                ]
               },
             },
             {
@@ -232,7 +457,12 @@ export default {
               "name": "PREFIX",
               "text":{
                 "content": "PTM",
-                "characterStyles": [{ "fontColor": this.textColor(poster.design) }]
+                "characterStyles": [
+                  { 
+                    "fontColor": this.textColor(poster.design),
+                    "fontName": "OpenSans-Light"
+                  }
+                ]
               },
             },
             {
@@ -241,7 +471,12 @@ export default {
               "name": "FORMAT",
               "text":{
                 "content": "-   -         -  -     -",
-                "characterStyles": [{ "fontColor": this.textColor(poster.design) }]
+                "characterStyles": [
+                  { 
+                    "fontColor": this.textColor(poster.design),
+                    "fontName": "OpenSans-Light"
+                  }
+                ]
               },
             },
             {
@@ -249,8 +484,13 @@ export default {
               "edit":{},
               "name": "TITLE",
               "text":{
-                "content": poster.moment,
-                "characterStyles": [{ "fontColor": this.textColor(poster.design) }]
+                "content": poster.moment.toUpperCase(),
+                "characterStyles": [
+                  { 
+                    "fontColor": this.textColor(poster.design),
+                    "fontName": "OpenSansCondensed-Light"
+                  }
+                ]
               },
             },
             {
@@ -259,7 +499,12 @@ export default {
               "name": "SUBLINE",
               "text":{
                 "content": poster.subline,
-                "characterStyles": [{ "fontColor": this.textColor(poster.design) }]
+                "characterStyles": [
+                  { 
+                    "fontColor": this.textColor(poster.design),
+                    "fontName":"OpenSans-Light"
+                  }
+                ]
               },
             },
             {
@@ -268,7 +513,12 @@ export default {
               "name": "TAGLINE",
               "text":{
                 "content":  poster.tagline,
-                "characterStyles": [{ "fontColor": this.textColor(poster.design) }]
+                "characterStyles": [
+                  { 
+                    "fontColor": this.textColor(poster.design),
+                    "fontName":"OpenSans-Light" 
+                  }
+                ]
               },
             },
             {
@@ -318,19 +568,19 @@ export default {
         },
         "outputs":[
           {
-            "href":`/files/PTM/Templates/outputs/PTM-${poster.size}-${this.id}-${this.designNumber(poster.design)}-${poster.country}-${poster.language}.jpg`,
+            "href":`/files/PTM/Templates/outputs/PTM-${poster.size}-${poster.id}-${this.designNumber(poster.design)}-${this.posterItem.country}-${this.posterItem.language}.jpg`,
             "storage":"adobe",
             "type":"image/jpeg",
             "width":0,
             "overwrite":true,
             "quality":3
           },
-          {
-            "href":`/files/PTM/Templates/outputs/PTM-${poster.size}-${this.id}-${this.designNumber(poster.design)}-${poster.country}-${poster.language}.psd`,
-            "storage":"adobe",
-            "type":"vnd.adobe.photoshop",
-            "overwrite":true
-          }
+          // {
+          //   "href":`/files/PTM/Templates/outputs/PTM-${poster.size}-${poster.id}-${this.designNumber(poster.design)}-${this.posterItem.country}-${this.posterItem.language}.psd`,
+          //   "storage":"adobe",
+          //   "type":"vnd.adobe.photoshop",
+          //   "overwrite":true
+          // }
         ]
       }
     }
@@ -339,23 +589,50 @@ export default {
 </script>
 
 <style scoped>
-
-  .flip-card {
-    background-color: transparent;
-    width: 300px;
-    height: 300px;
-    perspective: 1000px;
+  .scene {
+    width:280px;
+    height:500px;
+    perspective: 600px;
   }
-  .card-front, .card-back {
-    position: absolute;
+  .flip-card {
     width: 100%;
     height: 100%;
-    backface-visibility: hidden;
+    position: relative;
+    transition: transform .5s;
+    transform-style: preserve-3d;
   }
-  .card-back, .flip {
+  .flip-card.flip {
     transform: rotateY(180deg);
   }
-
+  .card-face {
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    backface-visibility: hidden;
+  }
+  .card-back {
+    transform: rotateY( 180deg );
+  }
+  .card-overlay {
+    top:0;
+    bottom:0;
+    left:0;
+    right:0;
+    position: absolute;
+    z-index:1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    background-color:rgba(255,255,255,.75);
+  }
+  .toast-message {    
+    display: flex;
+    align-items: center;
+  }
+  .container {
+    position:relative;
+  }
   ion-img {
     border-radius: 50%;
     overflow:hidden;
@@ -369,8 +646,8 @@ export default {
     transition: all 0.1s cubic-bezier(0.47, 0, 0.745, 0.715);
   }
   ion-card:not(:first-child) {
-    top:20;
-    left:20;
+    top:0;
+    left:0;
     z-index:-1;
     position: absolute;
   }
@@ -381,13 +658,16 @@ export default {
                 0 1px 5px 0 rgba(0,0,0,.12)
   }
   ion-card-content {
+    cursor: pointer;
+  }
+  /* ion-card-content {
     visibility: hidden;
     opacity: 0;  
     transition: visibility 0s linear 0.2s, opacity 0.2s linear;
-  }
-  ion-card:hover ion-card-content {
+  } */
+  /* ion-card:hover ion-card-content {
     visibility: visible;
     opacity: 1;    
     transition-delay: 0s;
-  }
+  } */
 </style>

@@ -1,29 +1,31 @@
 <template>
-    <ion-content fullscreen padding>
-      <ion-grid padding>
+    <ion-content fullscreen padding color="light">
+      <ion-grid>
 
         <ion-row class="ion-justify-content-center">
-          <ion-col size="12">
+          <ion-col size="3">
             <a href="/">
               <ion-img class="brand" :src="'../img/logo-original-vector.svg'" />
             </a>
           </ion-col>
-        </ion-row>
-
-        <ion-row class="ion-justify-content-center">
-          <ion-col size="12" size-md="4">
-            <ion-searchbar @ionInput="getOrder($event.target.value)" type="number" inputmode="numeric"></ion-searchbar>
-          </ion-col>
-        </ion-row>
-        <ion-row class="ion-justify-content-center">
-          <ion-col size="6" size-md="2" offset-md="1">
-            <IonSelectVue v-model="settings.status" :value="settings.status" @ionChange="viewStatus()">
-              <ion-select-option value="processing">Processing</ion-select-option>
-              <ion-select-option value="completed">Completed</ion-select-option>
-            </IonSelectVue >
-          </ion-col>
-          <ion-col size="6" size-md="2">
-            <ion-button class="ion-no-margin" @click="getDataset">DataSet</ion-button>
+          <ion-col size="9">
+            <ion-row>
+              <ion-col size="12">
+                <ion-searchbar @ionInput="getOrder($event.target.value)" debounce="500" type="number" inputmode="numeric"></ion-searchbar>
+              </ion-col>
+            </ion-row>
+            <ion-row>
+              <ion-col size="9">          
+                <IonSelectVue v-model="settings.status" :value="settings.status" @ionChange="viewStatus()">
+                  <ion-select-option value="pending">Pending</ion-select-option>
+                  <ion-select-option value="processing">Processing</ion-select-option>
+                  <ion-select-option value="completed">Completed</ion-select-option>
+                </IonSelectVue>
+              </ion-col>
+              <ion-col size="3" class="ion-hide-md-down">
+                <ion-button class="ion-no-margin" @click="getDataset">DataSet</ion-button>
+              </ion-col>
+            </ion-row>
           </ion-col>
         </ion-row>
 
@@ -32,11 +34,8 @@
             <ion-card-title class="ion-text-center">
               All done!
             </ion-card-title>
-            <ion-card-subtitle class="ion-text-center">
-              Time for a cuppa!
-            </ion-card-subtitle>
             <ion-card-content>
-              <ion-img src="../img/alldone.png"></ion-img>
+              <ion-img src="../img/all-done.png"></ion-img>
             </ion-card-content>
           </ion-card>
         </ion-row>
@@ -44,14 +43,22 @@
         <ion-row class="ion-justify-content-center">
           <ion-col size="12">            
             <div class="ion-padding poster-cards">
-              <poster-card v-for="order in orderData" :key="order.id" :poster="order" />
+              <div v-for="(order, index) in orderData" :key="index">
+                <ion-slides v-if="order.line_items.length > 1" pager>
+                  <ion-slide v-for="(poster, index) in order.line_items" :key="index">
+                    <poster-card :line-item="index" :poster="order" :key="poster.id" />
+                  </ion-slide>
+                </ion-slides>
+                <poster-card v-else :poster="order" :key="order.id" />
+              </div>
             </div>
           </ion-col>
+
           <ion-infinite-scroll @ionInfinite="moreOrders($event)" threshold="100px" position="bottom">
             <ion-infinite-scroll-content></ion-infinite-scroll-content>
           </ion-infinite-scroll>
-        </ion-row>
 
+        </ion-row>
       </ion-grid>
     </ion-content>
 </template>
@@ -64,12 +71,26 @@ export default {
   data () {
     return {
       isLoading: false,
+      isUpdated: false,
       orderData: Array,
+      // posterItems: Array,
       settings: {
         nextPage: 1,
         status: 'processing'
       }
     }
+  },
+  watch: {
+    // orderData: function() {
+    //   this.isUpdated = true
+    //   // this.posterItems = this.orderData
+    //   this.orderData.forEach(order => { 
+    //     this.posterItems.push(order);
+    //     order.line_items.forEach(item => {
+    //       console.log(item);
+    //     })
+    //   })
+    // }
   },
   computed:{
     getNumberOfWeek() {
@@ -78,7 +99,21 @@ export default {
       const pastDaysOfYear = (today - firstDayOfYear) / 86400000;
       return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
     },
+    getPosterData(){
+      return this.orderData.line_items;
+    }
   },
+  // asyncComputed: {
+  //   async posterData(){
+  //     this.orderData.forEach(order => { 
+  //       order.line_items.forEach(item => {
+  //         console.log(item)
+  //         this.posterItems.push(item);
+  //       })
+  //     });
+  //     return await posterItems;
+  //   },
+  // },
   methods: {
     viewStatus(){
       this.$woocommerce.get(`/orders/?status=${this.settings.status}`)
@@ -90,7 +125,9 @@ export default {
     },
     getOrder(orderId){
       this.$woocommerce.get(`/orders/${orderId}`)
-        .then(response => this.orderData = [response.data])
+        .then(response => { 
+          this.orderData = [response.data];          
+        })
         .catch(error => console.log('error', error))
     },
     moreOrders(infiniteScroll) {
@@ -140,7 +177,7 @@ export default {
             `"${poster[8].value.replace('"','""')}"`,
             `"${poster[9].value.replace('"','""')}"`,
             `"${poster[10].value.replace('"','""')}"`,
-            `D:\\NextUp\\${order.id}.png`,
+            `C:\\Users\\Virtual Reality\\Creative Cloud Files\\PTM\\Maps\\${order.id}.png`,
             poster[1].value == "granite",
             poster[1].value == "honey",
             poster[1].value == "mint",
@@ -168,12 +205,14 @@ export default {
     }
   },  
   created () {
-    this.$woocommerce.get(`/orders?status=${this.settings.status}`)
+    this.$woocommerce.get(`/orders?status=${this.settings.status}` )
     .then(response => this.orderData = response.data)
     .catch(error => console.log('error', error))
     .finally(console.log('WC done'))
   },
-  mounted () {    
+  mounted () {
+    if(this.$route.params.id)
+      this.getOrder(this.$route.params.id);
   },
   components: {
     PosterCard
@@ -184,6 +223,9 @@ export default {
 <style scoped>
   .done {
     margin-top:5rem;
+  }
+  ion-grid {
+    --ion-grid-padding-md: 1rem;
   }
   ion-card {
     box-shadow:none;
@@ -200,7 +242,8 @@ export default {
   }
   .poster-cards {
     display: grid;
-    grid-template-columns: repeat(auto-fit,minmax(240px,1fr));
+    grid-auto-columns: 1fr;    
+    grid-template-columns: repeat(auto-fill,minmax(250px,1fr));
     grid-gap: 1rem;
   }
 </style>
