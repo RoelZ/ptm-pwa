@@ -83,7 +83,23 @@
   --ion-color-granite-shade: #4a4d51;
   --ion-color-granite-tint: #65686c;
  
+  --ion-color-snow: #ffffff;
+  --ion-color-snow-rgb: 243,243,240;
+  --ion-color-snow-contrast: #000000;
+  --ion-color-snow-contrast-rgb: 0,0,0;
+  --ion-color-snow-shade: #d6d6d3;
+  --ion-color-snow-tint: #f4f4f2;
+ 
   
+}
+
+.ion-color-snow, .ion-color-moon {
+  --ion-color-base: var(--ion-color-snow);
+  --ion-color-base-rgb: var(--ion-color-snow-rgb);
+  --ion-color-contrast: var(--ion-color-snow-contrast);
+  --ion-color-contrast-rgb: var(--ion-color-snow-contrast-rgb);
+  --ion-color-shade: var(--ion-color-snow-shade);
+  --ion-color-tint: var(--ion-color-snow-tint);
 }
 
 .ion-color-mint {

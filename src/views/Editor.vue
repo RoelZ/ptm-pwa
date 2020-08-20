@@ -1,37 +1,43 @@
 <template>
-<ion-grid>
-  <ion-row justify-content-center	align-items-stretch>
-    <ion-col size="8">
-      <ion-card>
-        <ion-img src="https://www.placethemoment.com/thumbs/5db745ae662f9.png"></ion-img>
-        <ion-card-header class="ion-text-center">
-          <ion-card-title>My Moment</ion-card-title>
-          <ion-card-subtitle>My subline</ion-card-subtitle>
-        </ion-card-header>
-
-        <ion-card-content class="ion-text-center">
-          My tagline
-        </ion-card-content>
-      </ion-card>
-    </ion-col>
-  </ion-row>
-</ion-grid>
+  <div>
+    <map-tiler></map-tiler>
+    <ion-segment>
+      <ion-segment-button value="location">
+        <ion-icon name="pin"></ion-icon>
+      </ion-segment-button>
+      <ion-segment-button value="text">
+        <ion-icon name="quote"></ion-icon>
+      </ion-segment-button>
+      <ion-segment-button value="style">
+        <ion-icon name="heart"></ion-icon>
+      </ion-segment-button>
+    </ion-segment>
+  </div>
 </template>
 
 <script>
-// import GetStarted from '@/components/GetStarted.vue'
+import MapTiler from '@/components/MapTiler.vue'
+
+import { addIcons } from "ionicons";
+import { pin, quote, heart } from "ionicons/icons";
+
+addIcons({
+  "md-pin": pin.md,
+  "md-quote": quote.md,
+  "md-heart": heart.md
+});
 
 export default {
-  name: 'editor'
+  name: 'Editor',
+  components: {
+    MapTiler
+  }
 }
 </script>
 
 <style scoped>
-ion-grid {
-  height: 100%
-}
-ion-img {
-  margin:6rem 10rem;
+ion-segement {
+  margin-bottom:60px;
 }
   /* ion-content {
     display: flex;
