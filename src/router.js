@@ -2,31 +2,48 @@ import Vue from 'vue'
 import Home from './views/Home.vue'
 import Orders from './views/Orders.vue'
 import Editor from './views/Editor.vue'
-// import Event from './views/Event.vue'
+import Event from './views/Event.vue'
+import Login from './views/Login.vue'
+import firebase from 'firebase'
+import './api/firebase'
 
 import { IonicVueRouter } from '@ionic/vue'
 
 Vue.use(IonicVueRouter)
 
-export default new IonicVueRouter({
+let router = new IonicVueRouter({
   mode: 'history',
   base: process.env.BASE_URL,
   routes: [
     {
       path: '/',
       name: 'home',
-      component: Home
-    },    
+      component: Home,
+      meta: {
+        requiresAuth: true
+      }
+    },
+    {
+      path: '/login',
+      name: 'Login',
+      component: Login
+    },
     {
       path: '/orders',
       name: 'orders',
-      component: Orders
+      component: Orders,
+      meta: {
+        requiresAuth: true
+      }
     },
     {
       path: '/editor',
       name: 'editor',
-      component: Editor
-    }
+      component: Editor,
+      meta: {
+        requiresAuth: true
+      }
+    },
     // {
     //   path: '/orders',
     //   name: 'orders',
@@ -35,12 +52,37 @@ export default new IonicVueRouter({
     //   // which is lazy-loaded when the route is visited.
     //   component: () => import(/* webpackChunkName: "order" */ './views/Orders.vue')
     // },
-    // {
-    //   path: '/event/:screen',
-    //   name: 'event',
-    //   component: Event,
-    //   props: true
-    // // component: () => import(/* webpackChunkName: "event" */ './views/Event.vue')
-    // }
+    {
+      path: '/event',
+      name: 'event',
+      component: Event,
+      meta: {
+        requiresAuth: true
+      }
+    }
   ]
-})
+});
+
+// Nav Guards
+router.beforeEach((to, from, next) => {
+  // check for requiredAuth guard
+  if(to.matched.some(record => record.meta.requiresAuth)){
+    // check if NOT logged in
+    if(!firebase.auth().currentUser){
+      // Go to login
+      next({
+        path: '/login',
+        query: {
+          redirect: to.fullPath
+        }
+      });
+    } else {
+      // proceed to route
+      next();
+    }
+  } else {
+    next();
+  }
+});
+
+export default router;

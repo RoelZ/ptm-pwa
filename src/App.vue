@@ -1,10 +1,10 @@
 <template>
     <ion-app>
       <ion-content padding fullscreen>
-        <ion-vue-router />
+        <ion-vue-router id="menu-content" />
       </ion-content>
-      <ion-footer>
-        <h2>test</h2>
+      <ion-footer v-if="isLoggedIn">
+        <h2>...</h2>
       <ion-tabs>
         <ion-tab tab="orders" :routes="'orders'"></ion-tab>
         <ion-tab tab="tablet" :routes="'event'"></ion-tab>
@@ -15,17 +15,21 @@
             <ion-tab-button tab="orders" :to="'orders'">
               <ion-icon name="cart"></ion-icon>
               <ion-label>Orders</ion-label>
-              <ion-badge color="tertiary">7</ion-badge>
+              <ion-badge v-if="orderCount" color="tertiary">{{orderCount}}</ion-badge>
             </ion-tab-button>
 
-            <ion-tab-button disabled tab="tablet" :to="{ name: 'event', params: { screen: true } }">
-              <ion-icon name="tablet-portrait"></ion-icon>
-              <ion-label>Tablet</ion-label>
+            <ion-tab-button href="https://datastudio.google.com/s/iNQ9mqRHYlU">
+              <ion-icon name="analytics"></ion-icon>
+              <ion-label>Analytics</ion-label>
             </ion-tab-button>
 
             <ion-tab-button tab="scherm" :to="'editor'">
               <ion-icon name="easel"></ion-icon>
               <ion-label>Editor</ion-label>
+            </ion-tab-button>
+
+            <ion-tab-button v-on:click="logout()">
+              Logout
             </ion-tab-button>
 
           </ion-tab-bar>
@@ -37,16 +41,45 @@
 
 <script>
 import { addIcons } from "ionicons";
-import { cart, easel, tabletPortrait } from "ionicons/icons";
+import { cart, easel, analytics } from "ionicons/icons";
+
+import firebase from 'firebase';
+import './api/firebase';
 
 addIcons({
   "md-cart": cart.md,
   "md-easel": easel.md,
-  "md-tablet-portrait": tabletPortrait.md
+  "md-analytics": analytics.md
 });
 
 export default {
-  name: 'app'  
+  name: 'app',
+  data () {
+    return {
+      orderCount: 0,
+      isLoggedIn: false,
+      currentUser: false
+    }
+  },
+  created(){
+    if(firebase.auth().currentUser){
+      this.isLoggedIn = true;
+      this.currentUser = firebase.auth().currentUser.email;
+    }
+    this.$woocommerce.get(`/orders/?status=processing`)
+      .then(response => { 
+        console.log(response.data);
+        this.orderCount = response.data.length
+      })
+      .catch(error => console.log('error', error))
+  },
+  methods: {
+    logout(){
+      firebase.auth().signOut().then(() => {
+        this.$router.push('/login');
+      })
+    }
+  }
 }
 </script>
 
