@@ -1,5 +1,5 @@
 <template>
-  <div class="container">
+  <div class="container" :class="{ active: false }">
     <ion-card :color="posterItem.design" v-for="item in poster.line_items" :key="item.id">
       <ion-card-header class="ion-text-start">        
         <ion-chip :color="item.labelColor" :outline="!item.express">
@@ -13,7 +13,7 @@
         </ion-chip>
         <ion-chip class="ion-color ion-color-danger" v-if="posterItem.notes" @click="createModal()">
           <ion-icon name="mail-unread" class="ion-no-margin"></ion-icon>
-        </ion-chip>        
+        </ion-chip>
       </ion-card-header>
 
       <ion-card-content class="ion-text-center" @click="presentActionSheet(posterItem)">
@@ -22,6 +22,7 @@
             <ion-card-title>{{posterItem.moment}}</ion-card-title>
             <ion-card-subtitle>{{posterItem.subline}}</ion-card-subtitle>
             <ion-card-subtitle>{{posterItem.tagline}}</ion-card-subtitle>
+            <!-- <ion-card-subtitle>{{iets}}</ion-card-subtitle> -->
           </div>
       </ion-card-content>
         
@@ -29,6 +30,10 @@
         <ion-spinner name="dots"></ion-spinner>
       </div>
     </ion-card>
+    <div style="display:none;position:absolute;top:0;bottom:0;left:0;right:0">
+      {{zomaar}}
+      <ion-checkbox></ion-checkbox>
+    </div>
   </div>
 </template>
 
@@ -56,14 +61,19 @@ export default {
       default: 0
     },
     poster: Object,
+    zomaar: Boolean,
     shipping: Object
   },
   data (){
     return {      
       // id: this.poster.id,
       flipped: false,
-      loading: false
+      loading: false,
+      iets: false
     }
+  },
+  created () {
+    this.iets = this.zomaar
   },
   computed: {
     posterItem(){
@@ -100,11 +110,15 @@ export default {
     },    
   },
   methods: {
+    toggleSelected(){
+      this.selected = !this.selected;
+    },
     openToast(status, message, buttons){
       return this.$ionic.toastController
         .create({
           color: (status === 'failed') ? 'danger' : 'primary',
           message,
+          // duration: buttons ? 0 : 2000,
           showCloseButton: buttons ? false : true,
           buttons
         })
@@ -144,35 +158,52 @@ export default {
     },
     createMap(poster){
       this.$photoshop.post('/renditionCreate',this.mapObject(poster.id, poster.highres))
-      .then(response => this.getAdobeStatus(response.data._links.self.href));
+        .then(response => this.getAdobeStatus(response.data._links.self.href))
+        .catch(error => this.openToast('failed', error.message));
     },
     async createPDF(poster){
-      this.loading = true
-      console.log(this.adobeObject(poster));
-      const createJob = await this.$photoshop.post('/renditionCreate',this.adobeObject(poster));
-      const statusLink = await createJob.data._links.self.href;
-      setTimeout(() => {
-        this.getAdobeStatus(statusLink);        
-      }, 2500);
+      await this.$photoshop.post('/renditionCreate',this.adobeObject(poster))
+        .then(response => this.getAdobeStatus(response.data._links.self.href,poster,true))
+        .catch(error => this.openToast('failed', error.message));
     },
-    async getAdobeStatus(url){       
-      const getStatus = await this.$photoshop.get(url)
+    async applyActions(poster){
+      await this.$photoshop.post('/batchPlay',this.actionsObject(poster))
+        .then(response => this.getAdobeStatus(response.data._links.self.href, poster))
+        .catch(error => this.openToast('failed', error.message));
+    },
+    async getAdobeStatus(url, poster, actions = false){
+      const msg = poster ? `Creating PTM-${poster.size}-${poster.id}-${this.designNumber(poster.design)}-${this.posterItem.country}-${this.posterItem.language}.psd <ion-spinner name="dots" style="vertical-align: middle"></ion-spinner>` : 'Generating high-resolution map  <ion-spinner name="dots" style="vertical-align: middle"></ion-spinner>';
+      const getStatus = await this.$photoshop.get(url);
       getStatus.data.outputs.forEach(item => {
-        console.log(item.status)
         if(item.status === 'running'){
-          this.openToast(item.status, 'Creating PSD  <ion-spinner name="dots"></ion-spinner>', [{ 
-            text: 'Check again', handler: () => {
-              this.getAdobeStatus(url);
-            } 
-          }])
-        }
-        else if(item.status === 'failed'){
+          if(!this.loading){            
+            this.loading = true
+            this.openToast(item.status, msg);
+          }
+          setTimeout(() => {
+            this.getAdobeStatus(url, poster, actions);
+          }, 2000);
+        } else if(item.status === 'pending'){
+          if(!this.loading){            
+            this.loading = true
+            this.openToast(item.status, msg);
+          }
+          setTimeout(() => {
+            this.getAdobeStatus(url);
+          }, 2000);
+        } else if(item.status === 'failed'){
           this.loading = false
           item.errors.details.forEach(error => this.presentAlert(item.errors.title, error.name, error.reason));
         }
         else if(item.status === 'succeeded'){
-          this.loading = false
-          this.openToast(item.status, 'Job completed');
+          if(actions){
+            setTimeout(() => {
+              this.applyActions(poster);
+            },2500);
+          } else {
+            this.loading = false
+            this.$ionic.toastController.dismiss();
+          }
         }
       });
     },
@@ -257,9 +288,9 @@ export default {
            : { "rgb": { "blue": 70, "green": 174, "red": 216 } }    
     },
     textColor(design) {
-      return (design === 'snow' || design === 'honey') ? this.rgb('black')
-           : (design === 'granite' || design === 'mint') ? this.rgb('snow')
-           : this.rgb('granite')
+      return (design === 'snow' || design === 'honey') ? this.rgb16('black')
+           : (design === 'granite' || design === 'mint') ? this.rgb16('snow')
+           : this.rgb16('granite')
     },
     designNumber(design){
       return (design === 'snow') ? 0 
@@ -310,24 +341,45 @@ export default {
     },
     editPin(poster){
       if(poster.size === 'L'){
-        return {
-          "id":749,
-          "edit":{},
-          "name": "PIN",
-          "fill": {
-            "solidColor": this.rgb(poster.marker)
-          },
-        }
-      }
-      else if(poster.size === 'S'){
-        return {
-          "id":752,
-          "edit":{},
-          "name": "PIN",
-          "fill": {
-            "solidColor": this.rgb(poster.marker)
-          },
-        }
+        const heart =  
+          {
+            "id":792,
+            "edit":{},
+            "name": "HEART",
+            "visible": (poster.marker == 'heart') ? true : false
+          }
+        const pin =
+          {
+            "id":749,
+            "edit":{},
+            "name": "PIN",
+            "fill": {
+              "solidColor": this.rgb(poster.marker)
+            },
+            "visible": (poster.marker == 'heart') ? false : true
+          }
+        return { heart, pin }
+      } 
+      else if(poster.size === 'S')
+      {
+        const heart =
+          {
+            "id":796,
+            "edit":{},
+            "name": "HEART",
+            "visible": (poster.marker == 'heart') ? true : false
+          }
+        const pin =
+          {
+            "id":752,
+            "edit":{},
+            "name": "PIN",
+            "fill": {
+              "solidColor": this.rgb(poster.marker)
+            },
+            "visible": (poster.marker == 'heart') ? false : true
+          }
+        return { heart, pin }
       }
       else
         return {}
@@ -567,20 +619,46 @@ export default {
           ]
         },
         "outputs":[
-          {
-            "href":`/files/PTM/Templates/outputs/PTM-${poster.size}-${poster.id}-${this.designNumber(poster.design)}-${this.posterItem.country}-${this.posterItem.language}.jpg`,
-            "storage":"adobe",
-            "type":"image/jpeg",
-            "width":0,
-            "overwrite":true,
-            "quality":3
-          },
           // {
-          //   "href":`/files/PTM/Templates/outputs/PTM-${poster.size}-${poster.id}-${this.designNumber(poster.design)}-${this.posterItem.country}-${this.posterItem.language}.psd`,
+          //   "href":`/files/PTM/Templates/outputs/PTM-${poster.size}-${poster.id}-${this.designNumber(poster.design)}-${this.posterItem.country}-${this.posterItem.language}.jpg`,
           //   "storage":"adobe",
-          //   "type":"vnd.adobe.photoshop",
-          //   "overwrite":true
-          // }
+          //   "type":"image/jpeg",
+          //   "width":0,
+          //   "overwrite":true,
+          //   "quality":3
+          // },
+          {
+            "href":`/files/PTM/Templates/outputs/PTM-${poster.size}-${poster.id}-${this.designNumber(poster.design)}-${this.posterItem.country}-${this.posterItem.language}.psd`,
+            "storage":"adobe",
+            "type":"vnd.adobe.photoshop",
+            "overwrite":true
+          }
+        ]
+      }
+    },
+    actionsObject(poster){
+      return {
+        "inputs": [
+          {
+            "href": `/files/PTM/Templates/outputs/PTM-${poster.size}-${poster.id}-${this.designNumber(poster.design)}-${this.posterItem.country}-${this.posterItem.language}.psd`,
+            "storage": "adobe"
+          }
+        ],
+        "options": {
+          "actions": [
+            {
+              "href": `/files/actions/PTM-${poster.size}.atn`,
+              "storage": "adobe"
+            }
+          ]
+        },
+        "outputs": [
+          {
+              "storage":"adobe",
+              "type":"vnd.adobe.photoshop",
+              "overwrite":true,
+              "href": `/files/PTM/Templates/outputs/PTM-${poster.size}-${poster.id}-${this.designNumber(poster.design)}-${this.posterItem.country}-${this.posterItem.language}.psd`
+          }
         ]
       }
     }
@@ -656,6 +734,12 @@ export default {
     box-shadow: 0 3px 6px 6px rgba(0,0,0,.2), 
                 0 2px 4px 0 rgba(0,0,0,.14), 
                 0 1px 5px 0 rgba(0,0,0,.12)
+  }
+  div.active {
+    background: rgba(221,221,221,.5);
+  }
+  div.active ion-card {
+    transform: scale(.95);
   }
   ion-card-content {
     cursor: pointer;
