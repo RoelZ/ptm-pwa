@@ -6,6 +6,7 @@ node_modules
 /public/img/icons
 
 # local env files
+.env
 .env.local
 .env.*.local
 wc.config.js
