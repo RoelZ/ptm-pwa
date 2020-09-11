@@ -44,6 +44,14 @@ let router = new IonicVueRouter({
         requiresAuth: true
       }
     },
+    {
+      path: '/analytics',
+      name: 'Analytics',
+      component: Event,
+      meta: {
+        requiresAuth: true
+      }
+    }
     // {
     //   path: '/orders',
     //   name: 'orders',
@@ -51,15 +59,7 @@ let router = new IonicVueRouter({
     //   // this generates a separate chunk (about.[hash].js) for this route
     //   // which is lazy-loaded when the route is visited.
     //   component: () => import(/* webpackChunkName: "order" */ './views/Orders.vue')
-    // },
-    {
-      path: '/event',
-      name: 'event',
-      component: Event,
-      meta: {
-        requiresAuth: true
-      }
-    }
+    // },    
   ]
 });
 

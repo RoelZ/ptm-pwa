@@ -14,3 +14,9 @@ export default {
   }
 }
 </script>
+
+<style>
+ion-content {
+  --background: #2e2d33;
+}
+</style>

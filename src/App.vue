@@ -7,7 +7,7 @@
         <h2>...</h2>
       <ion-tabs>
         <ion-tab tab="orders" :routes="'orders'"></ion-tab>
-        <ion-tab tab="tablet" :routes="'event'"></ion-tab>
+        <ion-tab tab="analytics" :routes="'analytics'"></ion-tab>
         <ion-tab tab="editor" :routes="'editor'"></ion-tab>
 
         <template slot="bottom">
@@ -18,7 +18,7 @@
               <ion-badge v-if="orderCount" color="tertiary">{{orderCount}}</ion-badge>
             </ion-tab-button>
 
-            <ion-tab-button href="https://datastudio.google.com/s/iNQ9mqRHYlU">
+            <ion-tab-button tab="analytics" :to="'analytics'">
               <ion-icon name="analytics"></ion-icon>
               <ion-label>Analytics</ion-label>
             </ion-tab-button>
@@ -66,12 +66,15 @@ export default {
       this.isLoggedIn = true;
       this.currentUser = firebase.auth().currentUser.email;
     }
-    this.$woocommerce.get(`/orders/?status=processing`)
+
+    this.$woocommerce.get(`orders/?status=processing`)
       .then(response => { 
         console.log(response.data);
         this.orderCount = response.data.length
       })
-      .catch(error => console.log('error', error))
+      .catch((error) => {
+        console.log("Error Response:", error);
+      })
   },
   methods: {
     logout(){

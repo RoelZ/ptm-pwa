@@ -58,7 +58,7 @@ export default {
   created() {
     if(this.order){
       console.log(this.$refs, this.$refs['ionNotes'])
-      this.$woocommerce.get(`/orders/${this.order}/notes`)
+      this.$woocommerce.get(`orders/${this.order}/notes`)
         .then(response => { this.notesData = response.data })
         .then(this.$refs['ionNotes'].scrollToBottom(0))
         .catch(error => console.log('error', error))
@@ -67,7 +67,7 @@ export default {
   methods: {
     createNote(){
       if(this.order){
-        this.$woocommerce.post(`/orders/${this.order}/notes`, `{ "note": "${this.note}" }` )
+        this.$woocommerce.post(`orders/${this.order}/notes`, `{ "note": "${this.note}" }` )
         .then(response => { 
           this.notesData.unshift(response.data);
           console.log(response.data)
