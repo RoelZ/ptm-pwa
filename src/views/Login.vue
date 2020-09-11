@@ -3,14 +3,24 @@
     <ion-img class="brand" :src="'../img/logo-original-vector.svg'" />
     <ion-card class="ion-padding">
       <ion-card-content>
+        <ion-item-group>
         <ion-item>
           <ion-label position="stacked">Email address</ion-label>
           <ion-input autofocus required type="email" inputmode="email" @ionInput="user.email = $event.target.value"></ion-input>
         </ion-item>
         <ion-item>
           <ion-label position="stacked">Password</ion-label>
-          <ion-input required type="password" @ionInput="user.password = $event.target.value" inputmode="text"></ion-input>
+          <ion-input required type="password" @ionInput="user.password = $event.target.value" inputmode="password"></ion-input>
         </ion-item>
+        <ion-item>
+          <ion-label position="stacked">Token</ion-label>
+          <ion-input required type="text" @ionInput="user.token = $event.target.value" inputmode="text"></ion-input>
+        </ion-item>
+        <ion-item v-show="false" lines="none" button href="https://ps-prerelease-us-east-1.cloud.adobe.io/" target="_blank">            
+            <ion-label>Get token here</ion-label>
+        </ion-item>        
+        
+        </ion-item-group>
         <ion-button v-on:click="login" expand="block" class="ion-no-margin">Login</ion-button>
       </ion-card-content>
     </ion-card>
@@ -27,7 +37,8 @@ export default {
     return {
       user: {
         email: null,
-        password: null
+        password: null,
+        token: null
       }
     }
   },
@@ -36,6 +47,7 @@ export default {
      firebase.auth().signInWithEmailAndPassword(this.user.email, this.user.password)
       .then(
        () => {
+        localStorage.token = this.user.token;
         this.$router.push('/')
        },
        err => {
