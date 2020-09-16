@@ -1,5 +1,5 @@
 <template>
-    <ion-content fullscreen padding color="light">
+    <ion-content fullscreen padding color="light" v-visibility-change="visibilityChange">
       <ion-grid>
 
         <ion-row class="ion-justify-content-center">
@@ -64,15 +64,19 @@
           <ion-infinite-scroll @ionInfinite="moreOrders($event)" threshold="100px" position="bottom">
             <ion-infinite-scroll-content></ion-infinite-scroll-content>
           </ion-infinite-scroll>
-
         </ion-row>
+
+        <div class="card-overlay" v-if="isLoading">
+          <ion-spinner name="dots"></ion-spinner>
+        </div>
+
       </ion-grid>
     </ion-content>
 </template>
 
 <script>
 // import PosterCard from '@/components/PosterCard.vue'
-import {weekNumber} from 'weeknumber'
+import { weekNumber } from 'weeknumber'
 
 export default {
   name: 'Orders',
@@ -81,7 +85,7 @@ export default {
   },
   data () {
     return {
-      isLoading: false,
+      isLoading: true,
       isUpdated: false,
       orderData: Array,
       selected: false,
@@ -124,7 +128,16 @@ export default {
   //     return await posterItems;
   //   },
   // },
-  methods: {  
+  methods: {
+    visibilityChange(evt, hidden) {
+      if(!hidden){
+        this.isLoading = true;
+        this.$woocommerce.get(`orders?status=${this.settings.status}` )
+          .then(response => this.orderData = response.data)
+          .catch(error => console.log('error', error))
+          .finally(result => { this.isLoading = false; console.log('finally') })
+      }
+    },
     toggleSelection(){
       this.selected = !this.selected;
       console.log(this.selected)
@@ -222,12 +235,12 @@ export default {
     this.$woocommerce.get(`orders?status=${this.settings.status}` )
     .then(response => this.orderData = response.data)
     .catch(error => console.log('error', error))
-    .finally(console.log('WC done'))
+    .finally(result => { this.isLoading = false; console.log('finally') })
   },
-  mounted () {
-    if(this.$route.params.id)
-      this.getOrder(this.$route.params.id);
-  }
+  // mounted () {
+  //   if(this.$route.params.id)
+  //     this.getOrder(this.$route.params.id);
+  // }
 }
 </script>
 
@@ -247,6 +260,14 @@ export default {
   ion-card-subtitle {
     font-size:1.5rem
   }
+  ion-item {
+    --background: none;
+    --border-style: none;
+    --padding-start: 2rem;
+  }
+  ion-slides {
+    height:100%
+  }
   .brand {
     width:200px;
     margin:0 auto;
@@ -257,12 +278,17 @@ export default {
     grid-template-columns: repeat(auto-fill,minmax(250px,1fr));
     grid-gap: 1rem;
   }
-  ion-item {
-    --background: none;
-    --border-style: none;
-    --padding-start: 2rem;
-  }
-  ion-slides {
-    height:100%
+  .card-overlay {
+    top:0;
+    bottom:0;
+    left:0;
+    right:0;
+    position: absolute;
+    z-index:1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    background-color:rgba(255,255,255,.75);
   }
 </style>
