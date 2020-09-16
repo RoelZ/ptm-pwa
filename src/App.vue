@@ -66,15 +66,11 @@ export default {
       this.isLoggedIn = true;
       this.currentUser = firebase.auth().currentUser.email;
     }
-
-    this.$woocommerce.get(`orders/?status=processing`)
-      .then(response => { 
-        console.log(response.data);
-        this.orderCount = response.data.length
-      })
-      .catch((error) => {
-        console.log("Error Response:", error);
-      })
+    if(this.isLoggedIn){
+      this.$woocommerce.get(`orders/?status=processing`)
+        .then(response => this.orderCount = response.data.length)
+        .catch((error) => console.log("Error Response:", error))
+    }
   },
   methods: {
     logout(){
