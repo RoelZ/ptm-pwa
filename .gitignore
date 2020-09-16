@@ -21,6 +21,7 @@ yarn-error.log*
 .idea
 .vscode
 .firebase
+.firebaserc
 *.suo
 *.ntvs*
 *.njsproj
