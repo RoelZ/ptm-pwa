@@ -1,3 +1,24 @@
+# Current used Actions
+- Layer Selection
+- Transforming layers
+- Setting Text Styles
+- Color Range Selection
+- Layer alignment
+
+# Future actions/processing
+- Converting Layers to Shape
+- Exporting to PDF
+
+# Current Workarounds
+- Binding actions to renditionCreate
+- JWT token is a different account, so no Adobe Cloud storage
+
+# Current issues/blockades
+- Open Sans Condensed
+- No Adobe Cloud Storage
+
+
+
 # Photoshop API CreateRender
 - -TextColor Granite is onjuist-
 - Text MOMENT in kapitalen
