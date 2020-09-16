@@ -19,7 +19,8 @@
     "vue": "^2.6.11",
     "vue-axios": "^2.1.5",
     "vue-router": "^3.3.4",
-    "vue2-leaflet": "^2.5.2"
+    "vue2-leaflet": "^2.5.2",
+    "weeknumber": "^1.1.2"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "^3.12.1",
