@@ -135,7 +135,7 @@ export default {
         this.$woocommerce.get(`orders?status=${this.settings.status}` )
           .then(response => this.orderData = response.data)
           .catch(error => console.log('error', error))
-          .finally(result => { this.isLoading = false; console.log('finally') })
+          .finally(() =>this.isLoading = false)
       }
     },
     toggleSelection(){
@@ -235,7 +235,7 @@ export default {
     this.$woocommerce.get(`orders?status=${this.settings.status}` )
     .then(response => this.orderData = response.data)
     .catch(error => console.log('error', error))
-    .finally(result => { this.isLoading = false; console.log('finally') })
+    .finally(() => this.isLoading = false)
   },
   // mounted () {
   //   if(this.$route.params.id)
