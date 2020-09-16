@@ -1,5 +1,5 @@
 <template>
-  <div class="container" :class="{ active: false }">
+  <div class="poster" :class="{ active: false }">
     <ion-card :color="posterItem.design" v-for="item in poster.line_items" :key="item.id">
       <ion-card-header class="ion-text-start">        
         <ion-chip :color="item.labelColor" :outline="!item.express">
@@ -84,9 +84,7 @@ export default {
       // onderstaande mist meerder items in cart (line_items[this.lineItem])
       // (this.poster.line_items.length)
 
-      let oldOrder = 0
-      if(this.poster.line_items[this.lineItem].meta_data[2].key !== '_fly_woo_discount_price_rules')
-        oldOrder = 1
+      let oldOrder = (this.poster.line_items[this.lineItem].meta_data[2].key == '_Place ID') ? 1 : 0;
 
       return {
         id: this.poster.id,
@@ -708,8 +706,10 @@ export default {
     display: flex;
     align-items: center;
   }
-  .container {
+  .poster {
     position:relative;
+    display:flex;
+    height:100%;
   }
   ion-img {
     border-radius: 50%;

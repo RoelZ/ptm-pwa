@@ -263,4 +263,7 @@ export default {
     --border-style: none;
     --padding-start: 2rem;
   }
+  ion-slides {
+    height:100%
+  }
 </style>
