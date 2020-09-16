@@ -219,7 +219,6 @@ export default {
     }
   },  
   created () {
-    console.log(process.env.VUE_APP_WC_URL);
     this.$woocommerce.get(`orders?status=${this.settings.status}` )
     .then(response => this.orderData = response.data)
     .catch(error => console.log('error', error))

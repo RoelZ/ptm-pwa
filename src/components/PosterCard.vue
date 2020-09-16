@@ -232,6 +232,13 @@ export default {
               },
             },
             {
+              text: 'Order details',
+              icon: 'cube',
+              handler: () => {
+                this.$router.push(`/order/${poster.id}`);
+              },
+            },
+            {
               text: 'Annuleer',
               icon: 'close',
               role: 'cancel',

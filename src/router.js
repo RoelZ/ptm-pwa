@@ -1,6 +1,7 @@
 import Vue from 'vue'
 import Home from './views/Home.vue'
 import Orders from './views/Orders.vue'
+import OrderView from './views/Order.vue'
 import Editor from './views/Editor.vue'
 import Event from './views/Event.vue'
 import Login from './views/Login.vue'
@@ -32,6 +33,14 @@ let router = new IonicVueRouter({
       path: '/orders',
       name: 'orders',
       component: Orders,
+      meta: {
+        requiresAuth: true
+      }
+    },
+    {
+      path: '/order/:id',
+      name: 'order',
+      component: OrderView,
       meta: {
         requiresAuth: true
       }
