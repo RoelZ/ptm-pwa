@@ -235,7 +235,7 @@ export default {
               text: 'Order details',
               icon: 'cube',
               handler: () => {
-                this.$router.push(`/order/${poster.id}`);
+                this.$router.push(`/order/${poster.id}`)
               },
             },
             {
