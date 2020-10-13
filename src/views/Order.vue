@@ -14,28 +14,34 @@
         <ion-item>
           <ion-label class="ion-text-wrap">
             <h1>{{ poster.orderData.id }}</h1>
-              <p>{{displayCreatedDate}}</p>
+            <p>{{displayCreatedDate}}</p>
           </ion-label>
           <ion-badge color="success" slot="end">
             {{displayDaysPast}}
           </ion-badge>
         </ion-item>
         <ion-item>
-          <ion-label>
-            <h1>Customer details</h1>
+          <ion-label class="ion-text-wrap">
+            <h1>Customer &amp; shipping details</h1>            
           </ion-label>
+          <ion-badge color="warning" slot="end">
+            {{poster.orderData.shipping_lines[0].method_title}}
+          </ion-badge>
         </ion-item>
         <ion-item>
           <ion-label class="ion-text-wrap">
             <ion-text>
               {{poster.orderData.shipping.first_name}} {{poster.orderData.shipping.last_name}}
             </ion-text>
+            <ion-chip v-if="poster.orderData.billing.phone" outline color="success" v-on:click="gotoUrl(hrefWhatsApp)">              
+              <ion-avatar><ion-img src="../img/logo-whatsapp.svg" /></ion-avatar>
+              <ion-label>wa.me/{{poster.orderData.billing.phone}}</ion-label>
+            </ion-chip>
             <p>{{poster.orderData.shipping.address_1}} {{poster.orderData.shipping.address_2}}</p>
             <p>{{poster.orderData.shipping.postcode}}</p>
             <p>{{poster.orderData.shipping.city}} {{poster.orderData.shipping.country}}</p>
             <p>{{poster.orderData.billing.email}}</p>
-            <p>{{poster.orderData.billing.phone}}</p>
-            <h2>{{poster.orderData.shipping_lines[0].method_title}}</h2>
+            
           </ion-label>
         </ion-item>
         <ion-item>
@@ -50,16 +56,17 @@
             <p>{{poster.orderData.customer_ip_address}}</p>
           </ion-label>
         </ion-item>
+        <ion-item>
+          <ion-button @click="openModal">show raw data</ion-button>
+        </ion-item>
       </ion-list>
-      <pre>
-        {{poster.orderData}}
-      </pre>
     </ion-content>
   </ion-page>
 </template>
 
 <script>
 import platform from 'platform'
+import OrderData from '@/components/OrderData';
 
 export default {
     name: 'OrderView',
@@ -86,17 +93,40 @@ export default {
         const daysAgo = Math.round(Math.abs((dateCreated - dateCurrent) / oneDay));
         const daysText = (daysAgo > 1) ? 'days': 'day';
         return `${daysAgo} ${daysText} ago`;
+      },
+      hrefWhatsApp(){
+        if(this.poster.orderData.billing.country == 'NL' && this.poster.orderData.billing.phone.startsWith('06'))
+          return `https://wa.me/31${this.poster.orderData.billing.phone.slice(1)}`
+        else
+          return `https://wa.me/${this.poster.orderData.billing.phone}`
       }
     },
     watch:{
       '$route': 'getDataFromWC'
     },
     methods: {
+      gotoUrl(url){
+        window.open(url, '_blank');
+      },
       getDataFromWC(){
         this.poster.orderData = null
         this.$woocommerce.get(`orders/${this.$route.params.id}` )
           .then(response => this.poster.orderData = response.data)
           .catch(error => console.log('error', error))
+      },
+      openModal(){
+        return this.$ionic.modalController.create({
+          component: OrderData,
+          componentProps: {
+            data: {
+              content: this.poster.orderData
+            },
+            propsData: {
+              title: 'Raw order data'
+            }
+          }
+        })
+        .then(modal => modal.present());
       }
     },
     created(){
@@ -104,3 +134,9 @@ export default {
     }
 }
 </script>
+
+<style scoped>
+ion-avatar {
+  --size: 24px;
+}
+</style>
