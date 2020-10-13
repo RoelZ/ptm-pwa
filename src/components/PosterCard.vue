@@ -105,7 +105,10 @@ export default {
         labelColor: express ? 'danger' : '',        
         notes: this.poster.customer_note
       }
-    },    
+    },
+    lineItemLabel(){
+      return this.lineItem ? String.fromCharCode(65 + this.lineItem) : ''
+    }
   },
   methods: {
     toggleSelected(){
@@ -155,7 +158,7 @@ export default {
         .catch(() => alert('Probleem bij het ophalen..')); 
     },
     createMap(poster){
-      this.$photoshop.post('/renditionCreate',this.mapObject(poster.id, poster.highres))
+      this.$photoshop.post('/renditionCreate',this.mapObject(poster.id, this.designNumber(poster.design), poster.highres))
         .then(response => this.getAdobeStatus(response.data._links.self.href))
         .catch(error => this.openToast('failed', error.message));
     },
@@ -170,7 +173,7 @@ export default {
         .catch(error => this.openToast('failed', error.message));
     },
     async getAdobeStatus(url, poster, actions = false){
-      const msg = poster ? `Creating PTM-${poster.size}-${poster.id}-${this.designNumber(poster.design)}-${this.posterItem.country}-${this.posterItem.language}.psd <ion-spinner name="dots" style="vertical-align: middle"></ion-spinner>` : 'Generating high-resolution map  <ion-spinner name="dots" style="vertical-align: middle"></ion-spinner>';
+      const msg = poster ? `Creating PTM-${poster.size}-${poster.id}-${this.designNumber(poster.design)}${this.lineItemLabel}-${this.posterItem.country}-${this.posterItem.language}.psd <ion-spinner name="dots" style="vertical-align: middle"></ion-spinner>` : 'Generating high-resolution map  <ion-spinner name="dots" style="vertical-align: middle"></ion-spinner>';
       const getStatus = await this.$photoshop.get(url);
       getStatus.data.outputs.forEach(item => {
         if(item.status === 'running'){
@@ -191,7 +194,9 @@ export default {
           }, 2000);
         } else if(item.status === 'failed'){
           this.loading = false
-          item.errors.details.forEach(error => this.presentAlert(item.errors.title, error.name, error.reason));
+          this.$ionic.toastController.dismiss();
+          this.openToast(item.status, `${item.errors.code}: ${item.errors.title}`)
+          // item.errors.details.forEach(error => this.presentAlert(item.errors.title, error.name, error.reason));
         }
         else if(item.status === 'succeeded'){
           if(actions){
@@ -279,7 +284,7 @@ export default {
         .then(a => a.present())
     },
     rgb16(color){
-      return (color === 'granite') ? { "rgb": { "blue": 10794, "green": 11180, "red": 11822 } }
+      return (color === 'granite') ? { "rgb": { "blue": 11822, "green": 11180, "red": 10794 } }
            : (color === 'mint') ? { "rgb": { "blue": 14264, "green": 20689, "red": 17605 } }
            : (color === 'snow') ? { "rgb": { "blue": 32768, "green": 32768, "red": 32768 } }
            : (color === 'black') ? { "rgb": { "blue": 0, "green": 0, "red": 0 } }
@@ -305,91 +310,43 @@ export default {
            : 4
     },
     editMap(poster){
-      console.log(poster.design)
-      let suffix = '-'+String.fromCharCode(65 + this.lineItem);
-      if(poster.size === 'L'){
+      return {
+        "id": (poster.size === 'L') ? 281 : 590,
+        "edit":{},
+        "name": "MAP",
+        "input":{
+          "href":`/files/PTM/Maps/${poster.id}-${this.designNumber(poster.design)}${this.lineItemLabel}.png`,
+          "storage":"adobe"
+        },
+        "bounds":{
+          "height": (poster.size === 'L') ? 4729 : 2877,
+          "left": (poster.size === 'L') ? 661 : 404,
+          "top": (poster.size === 'L') ? 945 : 523,
+          "width": (poster.size === 'L') ? 4728 : 2877
+        },
+      }
+    },
+    editPin(marker, size){
+      if(marker === 'heart'){
         return {
-          "id":281,
+          "id": (size === 'L') ? 792 : 796,
           "edit":{},
-          "name": "MAP",
-          "input":{
-            "href":`/files/PTM/Maps/${poster.id}-${this.designNumber(poster.design)}${suffix}.png`,
-            "storage":"adobe"
-          },
-          "bounds":{
-            "height":4729,
-            "left":661,
-            "top":945,
-            "width":4728
-          },
-        }       
-      }      
-      else if(poster.size === 'S'){
+          "name": "HEART",
+          "visible": true
+        }
+      } else {
         return {
-          "id":590,
+          "id": (size === 'L') ? 749 : 752,
           "edit":{},
-          "name": "MAP",
-          "input":{
-            "href":`/files/PTM/Maps/${poster.id}-${this.designNumber(poster.design)}${suffix}.png`,
-            "storage":"adobe"
-          },
-          "bounds":{
-            "height":2877,
-            "left":404,
-            "top":523,
-            "width":2877
+          "name": "PIN",
+          "visible": true,
+          "fill": {
+            "solidColor": this.rgb(marker)
           },
         }
       }
-      else
-        return {}
     },
-    editPin(poster){
-      if(poster.size === 'L'){
-        const heart =  
-          {
-            "id":792,
-            "edit":{},
-            "name": "HEART",
-            "visible": (poster.marker == 'heart') ? true : false
-          }
-        const pin =
-          {
-            "id":749,
-            "edit":{},
-            "name": "PIN",
-            "fill": {
-              "solidColor": this.rgb(poster.marker)
-            },
-            "visible": (poster.marker == 'heart') ? false : true
-          }
-        return { heart, pin }
-      } 
-      else if(poster.size === 'S')
-      {
-        const heart =
-          {
-            "id":796,
-            "edit":{},
-            "name": "HEART",
-            "visible": (poster.marker == 'heart') ? true : false
-          }
-        const pin =
-          {
-            "id":752,
-            "edit":{},
-            "name": "PIN",
-            "fill": {
-              "solidColor": this.rgb(poster.marker)
-            },
-            "visible": (poster.marker == 'heart') ? false : true
-          }
-        return { heart, pin }
-      }
-      else
-        return {}
-    },
-    mapObject(posterid, posterurl){
+    mapObject(posterid, designNumber, posterurl){
       return {
         "inputs": [
           {
@@ -399,7 +356,7 @@ export default {
         ],
         "outputs":[
           {
-            "href":`/files/PTM/Maps/${posterid}-${this.designNumber(this.posterItem.design)}-${String.fromCharCode(65 + this.lineItem)}.png`,
+            "href":`/files/PTM/Maps/${posterid}-${designNumber}${this.lineItemLabel}.png`,
             "storage":"adobe",
             "type":"image/png",
             "width":0,
@@ -432,110 +389,12 @@ export default {
             },
             {
               "storage": "adobe",
-              "href": "/files/Fonts/Open_Sans_Condensed/OpenSansCondensed-Light.ttf"
+              "href": "/files/Fonts/Open_Sans/OpenSans-CondensedLight.ttf"
             }
           ],
           "layers":[
             this.editMap(poster),
-            this.editPin(poster),
-            {
-              "id":247,
-              "edit":{},        
-              "name": "LANGUAGE",
-              "text":{
-                "content": poster.language,
-                "characterStyles": [
-                  { 
-                    "fontColor": this.textColor(poster.design),
-                    "fontName": "OpenSans-Light"
-                  }
-                ]
-              },
-            },
-            {
-              "id":228,
-              "edit":{},        
-              "name": "COUNTRY",
-              "text":{
-                "content": poster.country,
-                "characterStyles": [
-                  { 
-                    "fontColor": this.textColor(poster.design),
-                    "fontName": "OpenSans-Light"
-                  }
-                ]
-              },
-            },
-            {
-              "id":487,
-              "edit":{},        
-              "name": "SIZE",
-              "text":{
-                "content": poster.size,
-                "characterStyles": [
-                  { 
-                    "fontColor": this.textColor(poster.design),
-                    "fontName": "OpenSans-Light"
-                  }
-                ]
-              },
-            },
-            {
-              "id":248,
-              "edit":{},        
-              "name": "DESIGN",
-              "text":{
-                "content": this.designNumber(poster.design),
-                "characterStyles": [
-                  { 
-                    "fontColor": this.textColor(poster.design),
-                    "fontName": "OpenSans-Light"
-                  }
-                ]
-              },
-            },
-            {
-              "id":227,
-              "edit":{},        
-              "name": "ORDER ID",
-              "text":{
-                "content": poster.id,
-                "characterStyles": [
-                  { 
-                    "fontColor": this.textColor(poster.design),
-                    "fontName": "OpenSans-Light"
-                  }
-                ]
-              },
-            },
-            {
-              "id":226,
-              "edit":{},        
-              "name": "PREFIX",
-              "text":{
-                "content": "PTM",
-                "characterStyles": [
-                  { 
-                    "fontColor": this.textColor(poster.design),
-                    "fontName": "OpenSans-Light"
-                  }
-                ]
-              },
-            },
-            {
-              "id":249,
-              "edit":{},        
-              "name": "FORMAT",
-              "text":{
-                "content": "-   -         -  -     -",
-                "characterStyles": [
-                  { 
-                    "fontColor": this.textColor(poster.design),
-                    "fontName": "OpenSans-Light"
-                  }
-                ]
-              },
-            },
+            this.editPin(poster.marker, poster.size),
             {
               "id":225,
               "edit":{},
@@ -545,11 +404,26 @@ export default {
                 "characterStyles": [
                   { 
                     "fontColor": this.textColor(poster.design),
-                    "fontName": "OpenSansCondensed-Light"
+                    "fontName": "OpenSans-CondensedLight"
                   }
                 ]
               },
             },
+            {
+              "id":226,
+              "edit":{},        
+              "name": "LABEL",
+              "text":{
+                "content": `PTM-${poster.size}-${poster.id}-${this.designNumber(poster.design)}${this.lineItemLabel}-${poster.country.toUpperCase()}-${poster.language}`,
+                "characterStyles": [
+                  { 
+                    "fontColor": this.textColor(poster.design),
+                    "fontName": "OpenSans-Light"
+                  }
+                ]
+              },
+            },
+            
             {
               "id":224,
               "edit":{},
@@ -633,7 +507,7 @@ export default {
           //   "quality":3
           // },
           {
-            "href":`/files/PTM/Templates/outputs/PTM-${poster.size}-${poster.id}-${this.designNumber(poster.design)}-${this.posterItem.country}-${this.posterItem.language}.psd`,
+            "href":`/files/PTM/Templates/outputs/PTM-${poster.size}-${poster.id}-${this.designNumber(poster.design)}${this.lineItemLabel}-${poster.country}-${poster.language}.psd`,
             "storage":"adobe",
             "type":"vnd.adobe.photoshop",
             "overwrite":true
@@ -645,7 +519,7 @@ export default {
       return {
         "inputs": [
           {
-            "href": `/files/PTM/Templates/outputs/PTM-${poster.size}-${poster.id}-${this.designNumber(poster.design)}-${this.posterItem.country}-${this.posterItem.language}.psd`,
+            "href": `/files/PTM/Templates/outputs/PTM-${poster.size}-${poster.id}-${this.designNumber(poster.design)}${this.lineItemLabel}-${poster.country}-${poster.language}.psd`,
             "storage": "adobe"
           }
         ],
@@ -662,7 +536,7 @@ export default {
               "storage":"adobe",
               "type":"vnd.adobe.photoshop",
               "overwrite":true,
-              "href": `/files/PTM/Templates/outputs/PTM-${poster.size}-${poster.id}-${this.designNumber(poster.design)}-${this.posterItem.country}-${this.posterItem.language}.psd`
+              "href": `/files/PTM/Templates/outputs/PTM-${poster.size}-${poster.id}-${this.designNumber(poster.design)}${this.lineItemLabel}-${poster.country}-${poster.language}.psd`
           }
         ]
       }
