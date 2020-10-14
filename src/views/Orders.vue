@@ -39,7 +39,7 @@
             </ion-card-content>
           </ion-card>
         </ion-row>
-        <ion-row v-else>
+        <ion-row v-else-if="settings.status === 'processing'">
           <ion-col size="12">
             <ion-item button @click="toggleSelection">
               <ion-label>Week {{ currentWeek }}</ion-label>
@@ -56,7 +56,7 @@
                     <poster-card :line-item="index" :poster="order" :key="poster.id" :zomaar="selected" />
                   </ion-slide>
                 </ion-slides>
-                <poster-card v-else :poster="order" :key="order.id" />
+                <poster-card v-else :poster="order" :key="order.id" :zomaar="selected" />
               </div>
             </div>
           </ion-col>
