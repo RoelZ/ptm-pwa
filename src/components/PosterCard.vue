@@ -1,5 +1,5 @@
 <template>
-  <div class="poster" :class="{ active: false }">
+  <div class="poster" :class="{ active: iets }">
     <ion-card :color="posterItem.design" v-for="item in poster.line_items" :key="item.id">
       <ion-card-header class="ion-text-start">        
         <ion-chip :color="item.labelColor" :outline="!item.express">
@@ -31,7 +31,6 @@
       </div>
     </ion-card>
     <div style="display:none;position:absolute;top:0;bottom:0;left:0;right:0">
-      {{zomaar}}
       <ion-checkbox></ion-checkbox>
     </div>
   </div>
@@ -75,6 +74,11 @@ export default {
   created () {
     this.iets = this.zomaar
   },
+  watch: {
+    zomaar(){
+      this.iets = this.zomaar
+    }
+  },
   computed: {
     posterItem(){
       let express = RegExp('Express*').test(this.poster.shipping_lines[0].method_title);
@@ -108,6 +112,45 @@ export default {
     },
     lineItemLabel(){
       return this.lineItem ? String.fromCharCode(65 + this.lineItem) : ''
+    },
+    extractNumber(){
+      let addressArray = []
+      addressArray = this.poster.shipping.address_1.split(/(\d+)/g);
+      // let addressArray = this.poster.shipping.address_1.split(/(\d+)/g);
+      if(addressArray[1])
+        return addressArray[1]
+      else {
+        return this.poster.shipping.address_2.split(/(\d+)/g)[1];
+      }
+    },
+    getShipmentID(){
+      // 1: Thuisbezorgd / Home delivery (NL)
+      // 3: Home delivery (RU)
+      // 7: Thuisbezorgd / Home delivery (BE, DE)
+      // 12: DHL ophaalpunt / DHL Servicepoint (NL)
+      // 14: DHL ophaalpunt Express (NL)
+      // 17: Thuisbezorgd Express (BE)
+      // 18: DHL ophaalpunt (BE)
+      switch(this.poster.shipping_lines[0].instance_id){
+        case 1:
+          return 9;
+        case 3:
+          return 359; //false!
+        case 7:
+          return 9;
+        case 12:
+          return 115;
+        case 14:
+          return 115;
+        case 17:
+          return 9;
+        case 18:
+          return 115;
+        case 27:
+          return 359;
+        default:
+          return 9;
+      }
     }
   },
   methods: {
@@ -260,18 +303,34 @@ export default {
       .then(response => this.presentAlert('SendCloud API', 'Order details', `<pre>${response}</pre>`));
     },
     async sc_parcel_label(poster){
-      const parcel_obj = await this.$sendcloud.get(`/parcels/?order_number=${poster.id}`)
+      // const parcel_obj = await this.$sendcloud.get(`/parcels/?order_number=${poster.id}`);
       
-      parcel_obj.data.parcels.forEach(parcel => {
-        this.$sendcloud.get(`/parcels/${parcel.id}/documents/label`, { responseType: 'blob' })
-        .then(response => {
-          let blob = new Blob([response.data], { type: 'application/pdf' });
-          let link = document.createElement('a')
-          link.href = window.URL.createObjectURL(blob)
-          link.download = 'verzendlabel.pdf'
-          link.click();
-        })
-      })
+      // if(parcel_obj.data.parcels.length){
+      //   parcel_obj.data.parcels.forEach(parcel => {
+      //     this.$sendcloud.get(`/parcels/${parcel.id}/documents/label`, { responseType: 'blob' })
+      //       .then(response => {
+      //         let blob = new Blob([response.data], { type: 'application/pdf' });
+      //         let link = document.createElement('a')
+      //         link.href = window.URL.createObjectURL(blob)
+      //         link.download = 'verzendlabel.pdf'
+      //         link.click();
+      //       })
+      //   })
+      // } else {
+        console.log(poster);
+        this.$sendcloud.post(`/parcels`, this.sendcloudObject())
+          .then(res => {
+            this.$sendcloud.get(`/parcels/${res.data.parcel.id}/documents/label`, { responseType: 'blob' })
+              .then(response => {
+                let blob = new Blob([response.data], { type: 'application/pdf' });
+                let link = document.createElement('a')
+                link.href = window.URL.createObjectURL(blob)
+                link.download = 'verzendlabel.pdf'
+                link.click();
+              })
+          });
+      // }
+      
     },
     presentAlert(header, subHeader, message) {
       return this.$ionic.alertController
@@ -364,6 +423,26 @@ export default {
             "compression":"small"
           }
         ]
+      }
+    },
+    sendcloudObject(){
+      return {
+        "parcel": {
+          "name": this.poster.shipping.first_name + ' ' + this.poster.shipping.last_name,
+          "company_name": this.poster.shipping.company,
+          "address": this.poster.shipping.address_1,
+          "house_number": this.extractNumber,
+          "city": this.poster.shipping.city,
+          "postal_code": this.poster.shipping.postcode,
+          // "telephone": poster.billing.phone,
+          "request_label": true,
+          // "email": poster.billing.email,
+          "country": this.poster.shipping.country,
+          "shipment": {
+            "id": this.getShipmentID
+          },
+          "order_number": this.poster.id,
+        }
       }
     },
     adobeObject(poster){
@@ -621,6 +700,8 @@ export default {
   }
   div.active ion-card {
     transform: scale(.95);
+    opacity:.75;
+    pointer-events:none;
   }
   ion-card-content {
     cursor: pointer;
