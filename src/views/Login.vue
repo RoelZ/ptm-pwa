@@ -6,20 +6,17 @@
         <ion-item-group>
         <ion-item>
           <ion-label position="stacked">Email address</ion-label>
-          <ion-input autofocus required type="email" inputmode="email" @ionInput="user.email = $event.target.value"></ion-input>
+          <ion-input autofocus required type="email" inputmode="email" @ionInput="user.email = $event.target.value" v-on:keyup.enter="login"></ion-input>
         </ion-item>
         <ion-item>
-          <ion-label position="stacked">Password</ion-label>
-          <ion-input required type="password" @ionInput="user.password = $event.target.value" inputmode="password"></ion-input>
+          <ion-label position="stacked" lines="inset">Password</ion-label>
+          <ion-input required type="password" @ionInput="user.password = $event.target.value" inputmode="password" v-on:keyup.enter="login"></ion-input>
         </ion-item>
-        <ion-item>
-          <ion-label position="stacked">Token</ion-label>
-          <ion-input required type="text" @ionInput="user.token = $event.target.value" inputmode="text"></ion-input>
-        </ion-item>
-        <ion-item v-show="false" lines="none" button href="https://ps-prerelease-us-east-1.cloud.adobe.io/" target="_blank">            
-            <ion-label>Get token here</ion-label>
+        <ion-item v-if="user.email === 'roel.heesterbeek@gmail.com'">
+          <ion-label position="stacked">Token </ion-label>
+          <ion-note slot="end"><a href="https://ps-prerelease-us-east-1.cloud.adobe.io/" target="_blank">(request here)</a></ion-note>
+          <ion-input required type="text" @ionInput="user.token = $event.target.value" inputmode="text"></ion-input>          
         </ion-item>        
-        
         </ion-item-group>
         <ion-button v-on:click="login" expand="block" class="ion-no-margin">Login</ion-button>
       </ion-card-content>
@@ -79,6 +76,9 @@ ion-card-content {
   flex-direction: column;
   height: 100%;
   justify-content: space-evenly;
+}
+ion-note {
+  padding:0;
 }
 
 .brand {
