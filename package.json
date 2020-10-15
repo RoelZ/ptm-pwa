@@ -12,7 +12,7 @@
     "@woocommerce/woocommerce-rest-api": "^1.0.1",
     "axios": "^0.19.2",
     "core-js": "^2.6.11",
-    "firebase": "^7.17.1",
+    "firebase": "^7.23.0",
     "flag-icon-css": "^3.5.0",
     "jsonwebtoken": "^8.5.1",
     "leaflet": "^1.6.0",
