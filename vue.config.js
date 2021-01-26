@@ -1,16 +1,14 @@
 module.exports = {
-  devServer: {    
-    disableHostCheck: true,
+  devServer: {
     proxy: {
-      "/wp-json/wc/v3": {
-        "target": 'http://placethemoment.com',
-        // "pathRewrite": { '^wp-json/wc/v3' : '' },
-        "changeOrigin": true,
-        // "secure": false
-        }
+      '/pie/psdService/': {
+        target: 'https://image.adobe.io/',
+        changeOrigin: true
+      },
+      '/api/v2/': {
+        target: 'https://panel.sendcloud.sc/',
+        changeOrigin: true
+      }
     }
   },
-  publicPath: process.env.NODE_ENV === 'production'
-    ? '/apps/admin/'
-    : '/',
 }

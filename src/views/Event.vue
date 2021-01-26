@@ -1,22 +1,22 @@
 <template>  
-    <div class="ion-page">
-      <get-started :screen="show" />
-  </div>
+  <ion-content fullscreen nopadding scroll-y="false">
+      <analytics />
+  </ion-content>
 </template>
 
 <script>
-import GetStarted from '@/components/GetStarted.vue'
+import Analytics from '@/components/Analytics.vue'
 
 export default {
   name: 'event',
-  props: ['screen'],
-  data: function () {
-    return {      
-      show: this.screen
-    }    
-  },
   components: {
-    GetStarted
+    Analytics
   }
 }
 </script>
+
+<style scoped>
+ion-content {
+  --background: #2e2d33;
+}
+</style>

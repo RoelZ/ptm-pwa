@@ -1,0 +1,31 @@
+.DS_Store
+node_modules
+/dist
+/src/api
+/public/img/*.jpg
+/public/img/icons
+
+# local env files
+.env
+.env.local
+.env.*.local
+wc.config.js
+/docs
+
+# Log files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+firestore-debug.log*
+ui-debug.log*
+
+# Editor directories and files
+.idea
+.vscode
+.firebase
+.firebaserc
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
