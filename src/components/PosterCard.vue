@@ -22,7 +22,6 @@
             <ion-card-title>{{posterItem.moment}}</ion-card-title>
             <ion-card-subtitle>{{posterItem.subline}}</ion-card-subtitle>
             <ion-card-subtitle>{{posterItem.tagline}}</ion-card-subtitle>
-            <!-- <ion-card-subtitle>{{iets}}</ion-card-subtitle> -->
           </div>
       </ion-card-content>
         
@@ -82,7 +81,7 @@ export default {
   computed: {
     posterItem(){
       let express = RegExp('Express*').test(this.poster.shipping_lines[0].method_title);
-      let size = (this.poster.line_items[this.lineItem].meta_data[0].value == '30x40') ? 'S' : 'L'
+      let size = (this.poster.line_items[this.lineItem].meta_data[1].value == '30x40') ? 'S' : 'L'
 
       // onderstaande gaat fout wanneer er een line_item mist (meta_data[7], meta_data[8], etc)
       // onderstaande mist meerder items in cart (line_items[this.lineItem])
@@ -93,7 +92,7 @@ export default {
       return {
         id: this.poster.id,
         size,
-        design: this.poster.line_items[this.lineItem].meta_data[1].value,
+        design: this.poster.line_items[this.lineItem].meta_data[0].value,
         marker: this.poster.line_items[this.lineItem].meta_data[this.metaData(7, oldOrder)].value,
         moment: this.poster.line_items[this.lineItem].meta_data[this.metaData(8, oldOrder)].value,
         subline: this.poster.line_items[this.lineItem].meta_data[this.metaData(9, oldOrder)].value,
@@ -325,7 +324,7 @@ export default {
                 let blob = new Blob([response.data], { type: 'application/pdf' });
                 let link = document.createElement('a')
                 link.href = window.URL.createObjectURL(blob)
-                link.download = 'verzendlabel.pdf'
+                link.download = `${poster.id}-${this.designNumber(poster.design)}${this.lineItemLabel}.pdf` //'verzendlabel.pdf'
                 link.click();
               })
           });

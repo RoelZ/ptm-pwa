@@ -1,5 +1,5 @@
 <template>
-    <ion-content fullscreen padding color="light" v-visibility-change="visibilityChange">
+    <ion-content fullscreen padding color="light">
       <ion-grid>
 
         <ion-row class="ion-justify-content-center">
@@ -22,9 +22,10 @@
                   <ion-select-option value="completed">Completed</ion-select-option>
                 </IonSelectVue>
               </ion-col>
-              <!-- <ion-col size="3" class="ion-hide-md-down">
-                <ion-button class="ion-no-margin" color="light" @click="selectItem">Select All</ion-button>
-              </ion-col> -->
+              <ion-col size="6">
+                <ion-button class="ion-no-margin" color="light" @click="getReviews">Reviews</ion-button>
+                <ion-button class="ion-no-margin" color="light" @click="getOrderList">Orderlist</ion-button>
+              </ion-col>
             </ion-row>
           </ion-col>
         </ion-row>
@@ -50,7 +51,7 @@
         <ion-row class="ion-justify-content-center">
           <ion-col size="12">
             <div class="ion-padding poster-cards">
-              <div v-for="(order, index) in orderData" :key="index">
+              <div v-for="(order, index) in getPosterData" :key="index">
                 <ion-slides v-if="order.line_items && order.line_items.length > 1" pager>
                   <ion-slide v-for="(poster, index) in order.line_items" :key="index">
                     <poster-card :line-item="index" :poster="order" :key="poster.id" :zomaar="selected" />
@@ -75,7 +76,8 @@
 </template>
 
 <script>
-// import PosterCard from '@/components/PosterCard.vue'
+import Vue from 'vue'
+import OrderList from '@/components/OrderList';
 import { weekNumber } from 'weeknumber'
 
 export default {
@@ -90,7 +92,7 @@ export default {
       orderData: Array,
       selected: false,
       currentWeek: weekNumber(),
-      // posterItems: Array,
+      posterItems: Array,
       settings: {
         nextPage: 1,
         status: 'processing'
@@ -99,6 +101,18 @@ export default {
   },
   watch: {
     // orderData: function() {
+    //   this.posterItems = this.orderData.map((order) => {
+    //       const { line_items } = order;
+    //       const filteredLineItems = line_items.filter((item) => item.sku === 1015);
+
+    //       // To return undefined for orders with NO items has the given sku
+    //       if (!filteredLineItems.length) return;
+
+    //       return { ...order, line_items: filteredLineItems };
+    //     })
+    //     .filter((order) => order);
+      
+    //   console.log(this.posterItems);
     //   this.isUpdated = true
     //   // this.posterItems = this.orderData
     //   this.orderData.forEach(order => { 
@@ -112,10 +126,11 @@ export default {
   computed:{
     getWeekNumber() {
       return weekNumber();
-    },
+    },    
     getPosterData(){
-      return this.orderData.line_items;
-    },  
+      // console.log(this.filterOrdersByPoster(this.orderData));
+      return this.orderData;
+    },
   },
   // asyncComputed: {
   //   async posterData(){
@@ -125,19 +140,10 @@ export default {
   //         this.posterItems.push(item);
   //       })
   //     });
-  //     return await posterItems;
+  //     return await this.posterItems;
   //   },
   // },
   methods: {
-    visibilityChange(evt, hidden) {
-      if(!hidden){
-        this.isLoading = true;
-        this.$woocommerce.get(`orders?status=${this.settings.status}` )
-          .then(response => this.orderData = response.data)
-          .catch(error => console.log('error', error))
-          .finally(() =>this.isLoading = false)
-      }
-    },
     toggleSelection(){
       this.selected = !this.selected;
       console.log(this.selected)
@@ -229,7 +235,53 @@ export default {
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
-    }
+    },
+    getReviews(){
+      let currentDate = new Date();
+      let pastDate = new Date(currentDate);
+      pastDate.setDate(pastDate.getDate() - 5);
+
+      this.$woocommerce.get(`orders?&status=completed&before=${pastDate.toISOString().slice(0, -5)}&after=2020-11-12T23:00:00&per_page=80` )
+        .then((response) => {
+          response.data.filter(function(order) {
+            console.log(`(${order.billing.country}) ${order.billing.first_name}`);
+            console.log(order.billing.email);
+          });
+        })
+        .catch(error => console.log('error', error))
+    },
+    createModal() {
+      let ComponentClass = Vue.extend(OrderList)
+      let ComponentInstance = new ComponentClass()
+      ComponentInstance.$mount()
+
+      this.$ionic.modalController.create({
+        component: ComponentInstance.$el
+      }).then(modal => {
+        modal.present();
+        // currentModal = modal;
+      });
+    },
+    getOrderList(){
+      this.createModal();
+    },
+    // filterOrdersByPoster(orders){
+    //   var filteredLineItems = orders.map((order) => {
+    //     return order.line_items.filter((item) => item.sku == 1015)
+    //   });
+    //   return filteredLineItems;
+      // if (!filteredLineItems.length) return;
+      // return { ...orders, line_items: filteredLineItems };
+    // }
+    //       const { line_items } = order;
+    //       const filteredLineItems = line_items.filter((item) => item.sku === 1015);
+
+    //       // To return undefined for orders with NO items has the given sku
+    //       if (!filteredLineItems.length) return;
+
+    //       return { ...order, line_items: filteredLineItems };
+    //     })
+    //     .filter((order) => order);
   },  
   created () {
     this.$woocommerce.get(`orders?status=${this.settings.status}` )
