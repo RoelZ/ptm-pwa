@@ -68,7 +68,7 @@ export default {
     }
     if(this.isLoggedIn){
       this.$woocommerce.get(`orders/?status=processing`)
-        .then(response => this.orderCount = response.data.length)
+        .then(response => this.orderCount = response.headers['x-wp-total'])
         .catch((error) => console.log("Error Response:", error))
     }
   },

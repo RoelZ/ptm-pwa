@@ -51,7 +51,7 @@
         <ion-row class="ion-justify-content-center">
           <ion-col size="12">
             <div class="ion-padding poster-cards">
-              <div v-for="(order, index) in getPosterData" :key="index">
+              <div v-for="(order, index) in filterOrdersByPoster" :key="index">
                 <ion-slides v-if="order.line_items && order.line_items.length > 1" pager>
                   <ion-slide v-for="(poster, index) in order.line_items" :key="index">
                     <poster-card :line-item="index" :poster="order" :key="poster.id" :zomaar="selected" />
@@ -89,7 +89,7 @@ export default {
     return {
       isLoading: true,
       isUpdated: false,
-      orderData: Array,
+      orderData: [],
       selected: false,
       currentWeek: weekNumber(),
       posterItems: Array,
@@ -100,30 +100,6 @@ export default {
       }
     }
   },
-  watch: {
-    // orderData: function() {
-    //   this.posterItems = this.orderData.map((order) => {
-    //       const { line_items } = order;
-    //       const filteredLineItems = line_items.filter((item) => item.sku === 1015);
-
-    //       // To return undefined for orders with NO items has the given sku
-    //       if (!filteredLineItems.length) return;
-
-    //       return { ...order, line_items: filteredLineItems };
-    //     })
-    //     .filter((order) => order);
-      
-    //   console.log(this.posterItems);
-    //   this.isUpdated = true
-    //   // this.posterItems = this.orderData
-    //   this.orderData.forEach(order => { 
-    //     this.posterItems.push(order);
-    //     order.line_items.forEach(item => {
-    //       console.log(item);
-    //     })
-    //   })
-    // }
-  },
   computed:{
     getWeekNumber() {
       return weekNumber();
@@ -132,18 +108,16 @@ export default {
       // console.log(this.filterOrdersByPoster(this.orderData));
       return this.orderData;
     },
+    filterOrdersByPoster(){
+      return this.orderData.map((order) => {
+        const { line_items } = order;
+        const filteredLineItems = line_items.filter((item) => item.sku === "1015")
+        // return filteredLineItems;
+        if (!filteredLineItems.length) return;
+        return { ...order, line_items: filteredLineItems };
+      }).filter((order) => order);
+    }
   },
-  // asyncComputed: {
-  //   async posterData(){
-  //     this.orderData.forEach(order => { 
-  //       order.line_items.forEach(item => {
-  //         console.log(item)
-  //         this.posterItems.push(item);
-  //       })
-  //     });
-  //     return await this.posterItems;
-  //   },
-  // },
   methods: {
     toggleSelection(){
       this.selected = !this.selected;
@@ -177,20 +151,6 @@ export default {
       this.$woocommerce.get(`orders/${orderId}`)
         .then(response => { 
           this.orderData = [response.data];          
-        })
-        .catch(error => console.log('error', error))
-    },
-    moreOrders(infiniteScroll) {      
-      this.getOrders();
-      this.$woocommerce.get(`orders/?page=${this.settings.nextPage}&status=${this.settings.status}`)
-        .then(response => {
-          infiniteScroll.target.complete()
-          this.orderData = this.orderData.concat(response.data);          
-
-          if(this.settings.nextPage < response.headers['x-wp-totalpages'])
-            this.settings.nextPage++
-          else
-            infiniteScroll.target.setAttribute('disabled','')          
         })
         .catch(error => console.log('error', error))
     },
@@ -285,29 +245,25 @@ export default {
     },
     // filterOrdersByPoster(orders){
     //   var filteredLineItems = orders.map((order) => {
-    //     return order.line_items.filter((item) => item.sku == 1015)
+    //     return order.line_items.filter((item) => item.sku === "1015")
     //   });
-    //   return filteredLineItems;
-      // if (!filteredLineItems.length) return;
-      // return { ...orders, line_items: filteredLineItems };
+    //   // return filteredLineItems;
+    //   if (!filteredLineItems.length) return;
+    //   return { ...orders, line_items: filteredLineItems };
     // }
-    //       const { line_items } = order;
-    //       const filteredLineItems = line_items.filter((item) => item.sku === 1015);
+        //   const { line_items } = order;
+        //   const filteredLineItems = line_items.filter((item) => item.sku === 1015);
 
-    //       // To return undefined for orders with NO items has the given sku
-    //       if (!filteredLineItems.length) return;
+        //   // To return undefined for orders with NO items has the given sku
+        //   if (!filteredLineItems.length) return;
 
-    //       return { ...order, line_items: filteredLineItems };
-    //     })
-    //     .filter((order) => order);
+        //   return { ...order, line_items: filteredLineItems };
+        // })
+        // .filter((order) => order);
   },  
   created () {
     this.getOrders()
   },
-  // mounted () {
-  //   if(this.$route.params.id)
-  //     this.getOrder(this.$route.params.id);
-  // }
 }
 </script>
 
