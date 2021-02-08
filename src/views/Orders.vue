@@ -16,7 +16,7 @@
             </ion-row>
             <ion-row>
               <ion-col size="6">          
-                <IonSelectVue v-model="settings.status" :value="settings.status" @ionChange="viewStatus()">
+                <IonSelectVue v-model="settings.status" :value="settings.status" @ionChange="settings.nextPage = 1, getOrders()">
                   <ion-select-option value="pending">Pending</ion-select-option>
                   <ion-select-option value="processing">Processing</ion-select-option>
                   <ion-select-option value="completed">Completed</ion-select-option>
@@ -62,7 +62,7 @@
             </div>
           </ion-col>
 
-          <ion-infinite-scroll @ionInfinite="moreOrders($event)" threshold="100px" position="bottom">
+          <ion-infinite-scroll v-if="settings.infiniteScroll" @ionInfinite="getOrders($event)" threshold="100px" position="bottom">
             <ion-infinite-scroll-content></ion-infinite-scroll-content>
           </ion-infinite-scroll>
         </ion-row>
@@ -95,7 +95,8 @@ export default {
       posterItems: Array,
       settings: {
         nextPage: 1,
-        status: 'processing'
+        status: 'processing',
+        infiniteScroll: false
       }
     }
   },
@@ -148,13 +149,29 @@ export default {
       this.selected = !this.selected;
       console.log(this.selected)
     },
-    viewStatus(){
-      this.$woocommerce.get(`orders/?status=${this.settings.status}`)
-        .then(response => { 
+    getOrders(infiniteScroll){
+      this.$woocommerce.get(`orders?page=${this.settings.nextPage}&status=${this.settings.status}` )
+      .then(response => {
+        if(infiniteScroll){
+          this.orderData = this.orderData.concat(response.data);          
+          infiniteScroll.target.complete()
+
+          if(this.settings.nextPage < response.headers['x-wp-totalpages'])
+            this.settings.nextPage++
+          else
+            infiniteScroll.target.setAttribute('disabled','')  
+        } else {
           this.orderData = response.data
-          this.settings.nextPage++
-        })
-        .catch(error => console.log('error', error))
+          if(this.settings.nextPage < response.headers['x-wp-totalpages']){
+            this.settings.nextPage++
+            this.settings.infiniteScroll = true
+          } else {
+            this.settings.infiniteScroll = false
+          }
+        }
+      })
+      .catch(error => console.log('error', error))
+      .finally(() => this.isLoading = false)
     },
     getOrder(orderId){
       this.$woocommerce.get(`orders/${orderId}`)
@@ -163,7 +180,8 @@ export default {
         })
         .catch(error => console.log('error', error))
     },
-    moreOrders(infiniteScroll) {
+    moreOrders(infiniteScroll) {      
+      this.getOrders();
       this.$woocommerce.get(`orders/?page=${this.settings.nextPage}&status=${this.settings.status}`)
         .then(response => {
           infiniteScroll.target.complete()
@@ -284,10 +302,7 @@ export default {
     //     .filter((order) => order);
   },  
   created () {
-    this.$woocommerce.get(`orders?status=${this.settings.status}` )
-    .then(response => this.orderData = response.data)
-    .catch(error => console.log('error', error))
-    .finally(() => this.isLoading = false)
+    this.getOrders()
   },
   // mounted () {
   //   if(this.$route.params.id)
