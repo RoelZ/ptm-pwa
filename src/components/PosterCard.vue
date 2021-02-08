@@ -199,10 +199,12 @@ export default {
         })
         .catch(() => alert('Probleem bij het ophalen..')); 
     },
-    createMap(poster){
-      this.$photoshop.post('/renditionCreate',this.mapObject(poster.id, this.designNumber(poster.design), poster.highres))
+    createMap(poster, split){
+      this.$photoshop.post('/renditionCreate',this.mapObject(poster.id, this.designNumber(poster.design), split ? split : poster.highres))
         .then(response => this.getAdobeStatus(response.data._links.self.href))
-        .catch(error => this.openToast('failed', error.message));
+        .catch(error => {
+          this.openToast('failed', error.message, [{ side: 'start', text: 'Retry', handler: () => this.createMap(poster, poster.highres.split('?',1))}, { side: 'end', text: 'Close', handler: () => this.dismiss }])
+        });
     },
     async createPDF(poster){
       await this.$photoshop.post('/renditionCreate',this.adobeObject(poster))
