@@ -23,6 +23,7 @@
                 </IonSelectVue>
               </ion-col>
               <ion-col size="6">
+                <ion-button v-if="selected" class="ion-no-margin" color="primary" @click="batchOrders">Batch</ion-button>
                 <ion-button class="ion-no-margin" color="light" @click="getReviews">Reviews</ion-button>
                 <ion-button class="ion-no-margin" color="light" @click="getOrderList">Orderlist</ion-button>
               </ion-col>
@@ -79,12 +80,16 @@
 import Vue from 'vue'
 import OrderList from '@/components/OrderList';
 import { weekNumber } from 'weeknumber'
+import posterMixin from '../mixins/poster'
+import adobeMixin from '../mixins/adobe'
+import popupMixin from '../mixins/popups'
 
 export default {
   name: 'Orders',
   components: {
     PosterCard: () => import('@/components/PosterCard.vue')
   },
+  mixins: [posterMixin, adobeMixin, popupMixin],
   data () {
     return {
       isLoading: true,
@@ -92,7 +97,6 @@ export default {
       orderData: [],
       selected: false,
       currentWeek: weekNumber(),
-      posterItems: Array,
       settings: {
         nextPage: 1,
         status: 'processing',
@@ -105,7 +109,6 @@ export default {
       return weekNumber();
     },    
     getPosterData(){
-      // console.log(this.filterOrdersByPoster(this.orderData));
       return this.orderData;
     },
     filterOrdersByPoster(){
@@ -121,7 +124,6 @@ export default {
   methods: {
     toggleSelection(){
       this.selected = !this.selected;
-      console.log(this.selected)
     },
     getOrders(infiniteScroll){
       this.$woocommerce.get(`orders?page=${this.settings.nextPage}&status=${this.settings.status}` )
@@ -243,23 +245,16 @@ export default {
     getOrderList(){
       this.createModal();
     },
-    // filterOrdersByPoster(orders){
-    //   var filteredLineItems = orders.map((order) => {
-    //     return order.line_items.filter((item) => item.sku === "1015")
-    //   });
-    //   // return filteredLineItems;
-    //   if (!filteredLineItems.length) return;
-    //   return { ...orders, line_items: filteredLineItems };
-    // }
-        //   const { line_items } = order;
-        //   const filteredLineItems = line_items.filter((item) => item.sku === 1015);
-
-        //   // To return undefined for orders with NO items has the given sku
-        //   if (!filteredLineItems.length) return;
-
-        //   return { ...order, line_items: filteredLineItems };
-        // })
-        // .filter((order) => order);
+    batchOrders(){
+      for (let poster of this.filterOrdersByPoster){
+        poster.line_items.forEach((_, index) => {
+          // console.log('poster:', poster, 'index:', index)          
+          setTimeout(() => {
+            this.createPDF(this.posterItem(poster,index), index)              
+          }, 500)
+        })
+      }
+    },    
   },  
   created () {
     this.getOrders()
