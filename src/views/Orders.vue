@@ -45,7 +45,7 @@
           <ion-col size="12">
             <ion-item button @click="toggleSelection">
               <ion-label>Week {{ currentWeek }}</ion-label>
-              <ion-checkbox slot="start"></ion-checkbox>
+              <ion-checkbox slot="start" :checked="selected"></ion-checkbox>
             </ion-item>
           </ion-col>
         </ion-row>
