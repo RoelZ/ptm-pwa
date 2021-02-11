@@ -16,13 +16,14 @@
             </ion-row>
             <ion-row>
               <ion-col size="6">          
-                <IonSelectVue v-model="settings.status" :value="settings.status" @ionChange="viewStatus()">
+                <IonSelectVue v-model="settings.status" :value="settings.status" @ionChange="settings.nextPage = 1, getOrders()">
                   <ion-select-option value="pending">Pending</ion-select-option>
                   <ion-select-option value="processing">Processing</ion-select-option>
                   <ion-select-option value="completed">Completed</ion-select-option>
                 </IonSelectVue>
               </ion-col>
               <ion-col size="6">
+                <ion-button v-if="selected" class="ion-no-margin" color="primary" @click="batchOrders">Batch</ion-button>
                 <ion-button class="ion-no-margin" color="light" @click="getReviews">Reviews</ion-button>
                 <ion-button class="ion-no-margin" color="light" @click="getOrderList">Orderlist</ion-button>
               </ion-col>
@@ -44,14 +45,14 @@
           <ion-col size="12">
             <ion-item button @click="toggleSelection">
               <ion-label>Week {{ currentWeek }}</ion-label>
-              <ion-checkbox slot="start"></ion-checkbox>
+              <ion-checkbox slot="start" :checked="selected"></ion-checkbox>
             </ion-item>
           </ion-col>
         </ion-row>
         <ion-row class="ion-justify-content-center">
           <ion-col size="12">
             <div class="ion-padding poster-cards">
-              <div v-for="(order, index) in getPosterData" :key="index">
+              <div v-for="(order, index) in filterOrdersByPoster" :key="index">
                 <ion-slides v-if="order.line_items && order.line_items.length > 1" pager>
                   <ion-slide v-for="(poster, index) in order.line_items" :key="index">
                     <poster-card :line-item="index" :poster="order" :key="poster.id" :zomaar="selected" />
@@ -62,7 +63,7 @@
             </div>
           </ion-col>
 
-          <ion-infinite-scroll @ionInfinite="moreOrders($event)" threshold="100px" position="bottom">
+          <ion-infinite-scroll v-if="settings.infiniteScroll" @ionInfinite="getOrders($event)" threshold="100px" position="bottom">
             <ion-infinite-scroll-content></ion-infinite-scroll-content>
           </ion-infinite-scroll>
         </ion-row>
@@ -79,100 +80,79 @@
 import Vue from 'vue'
 import OrderList from '@/components/OrderList';
 import { weekNumber } from 'weeknumber'
+import posterMixin from '../mixins/poster'
+import adobeMixin from '../mixins/adobe'
+import popupMixin from '../mixins/popups'
 
 export default {
   name: 'Orders',
   components: {
     PosterCard: () => import('@/components/PosterCard.vue')
   },
+  mixins: [posterMixin, adobeMixin, popupMixin],
   data () {
     return {
       isLoading: true,
       isUpdated: false,
-      orderData: Array,
+      orderData: [],
       selected: false,
       currentWeek: weekNumber(),
-      posterItems: Array,
       settings: {
         nextPage: 1,
-        status: 'processing'
+        status: 'processing',
+        infiniteScroll: false
       }
     }
-  },
-  watch: {
-    // orderData: function() {
-    //   this.posterItems = this.orderData.map((order) => {
-    //       const { line_items } = order;
-    //       const filteredLineItems = line_items.filter((item) => item.sku === 1015);
-
-    //       // To return undefined for orders with NO items has the given sku
-    //       if (!filteredLineItems.length) return;
-
-    //       return { ...order, line_items: filteredLineItems };
-    //     })
-    //     .filter((order) => order);
-      
-    //   console.log(this.posterItems);
-    //   this.isUpdated = true
-    //   // this.posterItems = this.orderData
-    //   this.orderData.forEach(order => { 
-    //     this.posterItems.push(order);
-    //     order.line_items.forEach(item => {
-    //       console.log(item);
-    //     })
-    //   })
-    // }
   },
   computed:{
     getWeekNumber() {
       return weekNumber();
     },    
     getPosterData(){
-      // console.log(this.filterOrdersByPoster(this.orderData));
       return this.orderData;
     },
+    filterOrdersByPoster(){
+      return this.orderData.map((order) => {
+        const { line_items } = order;
+        const filteredLineItems = line_items.filter((item) => item.sku === "1015")
+        // return filteredLineItems;
+        if (!filteredLineItems.length) return;
+        return { ...order, line_items: filteredLineItems };
+      }).filter((order) => order);
+    }
   },
-  // asyncComputed: {
-  //   async posterData(){
-  //     this.orderData.forEach(order => { 
-  //       order.line_items.forEach(item => {
-  //         console.log(item)
-  //         this.posterItems.push(item);
-  //       })
-  //     });
-  //     return await this.posterItems;
-  //   },
-  // },
   methods: {
     toggleSelection(){
       this.selected = !this.selected;
-      console.log(this.selected)
     },
-    viewStatus(){
-      this.$woocommerce.get(`orders/?status=${this.settings.status}`)
-        .then(response => { 
+    getOrders(infiniteScroll){
+      this.$woocommerce.get(`orders?page=${this.settings.nextPage}&status=${this.settings.status}` )
+      .then(response => {
+        if(infiniteScroll){
+          this.orderData = this.orderData.concat(response.data);          
+          infiniteScroll.target.complete()
+
+          if(this.settings.nextPage < response.headers['x-wp-totalpages'])
+            this.settings.nextPage++
+          else
+            infiniteScroll.target.setAttribute('disabled','')  
+        } else {
           this.orderData = response.data
-          this.settings.nextPage++
-        })
-        .catch(error => console.log('error', error))
+          if(this.settings.nextPage < response.headers['x-wp-totalpages']){
+            this.settings.nextPage++
+            this.settings.infiniteScroll = true
+          } else {
+            this.settings.infiniteScroll = false
+          }
+        }
+      })
+      .catch(error => console.log('error', error))
+      .finally(() => this.isLoading = false)
     },
     getOrder(orderId){
       this.$woocommerce.get(`orders/${orderId}`)
         .then(response => { 
           this.orderData = [response.data];          
-        })
-        .catch(error => console.log('error', error))
-    },
-    moreOrders(infiniteScroll) {
-      this.$woocommerce.get(`orders/?page=${this.settings.nextPage}&status=${this.settings.status}`)
-        .then(response => {
-          infiniteScroll.target.complete()
-          this.orderData = this.orderData.concat(response.data);          
-
-          if(this.settings.nextPage < response.headers['x-wp-totalpages'])
-            this.settings.nextPage++
-          else
-            infiniteScroll.target.setAttribute('disabled','')          
         })
         .catch(error => console.log('error', error))
     },
@@ -265,34 +245,20 @@ export default {
     getOrderList(){
       this.createModal();
     },
-    // filterOrdersByPoster(orders){
-    //   var filteredLineItems = orders.map((order) => {
-    //     return order.line_items.filter((item) => item.sku == 1015)
-    //   });
-    //   return filteredLineItems;
-      // if (!filteredLineItems.length) return;
-      // return { ...orders, line_items: filteredLineItems };
-    // }
-    //       const { line_items } = order;
-    //       const filteredLineItems = line_items.filter((item) => item.sku === 1015);
-
-    //       // To return undefined for orders with NO items has the given sku
-    //       if (!filteredLineItems.length) return;
-
-    //       return { ...order, line_items: filteredLineItems };
-    //     })
-    //     .filter((order) => order);
+    batchOrders(){
+      for (let poster of this.filterOrdersByPoster){
+        poster.line_items.forEach((_, index) => {
+          // console.log('poster:', poster, 'index:', index)          
+          setTimeout(() => {
+            this.createPDF(this.posterItem(poster,index), index)              
+          }, 500)
+        })
+      }
+    },    
   },  
   created () {
-    this.$woocommerce.get(`orders?status=${this.settings.status}` )
-    .then(response => this.orderData = response.data)
-    .catch(error => console.log('error', error))
-    .finally(() => this.isLoading = false)
+    this.getOrders()
   },
-  // mounted () {
-  //   if(this.$route.params.id)
-  //     this.getOrder(this.$route.params.id);
-  // }
 }
 </script>
 

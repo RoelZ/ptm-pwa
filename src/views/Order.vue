@@ -46,6 +46,29 @@
         </ion-item>
         <ion-item>
           <ion-label>
+            <h1>Items ordered</h1>
+          </ion-label>
+        </ion-item>
+        <ion-item v-for="item in poster.orderData.line_items" :key="item.id">
+          <ion-label v-if="item.sku == '1015'">
+            <ion-text>
+              {{item.quantity}}x {{item.parent_name}} 
+              <ion-chip><ion-label>{{item.meta_data[0].display_value}}</ion-label></ion-chip> 
+              <ion-chip><ion-label>{{item.meta_data[1].display_value}}</ion-label></ion-chip> 
+            </ion-text>
+            <p>{{item.meta_data[8].display_value}}</p>
+            <p>{{item.meta_data[9].display_value}}</p>
+            <p>{{item.meta_data[10].display_value}}</p>
+            <ion-button :href="`https://developers.google.com/maps/documentation/javascript/examples/geocoding-place-id${item.meta_data[10].display_value}`">Place ID</ion-button>
+            <ion-button :href="item.meta_data[10].display_value">Place ID</ion-button>
+          </ion-label>
+          <ion-label v-else>
+            <p>{{item.meta_data}}</p>
+            <p>{{item.meta_data['pa_size']}}</p>
+          </ion-label>
+        </ion-item>
+        <ion-item>
+          <ion-label>
             <h1>Technology</h1>
           </ion-label>
         </ion-item>
@@ -66,7 +89,9 @@
 
 <script>
 import platform from 'platform'
-import OrderData from '@/components/OrderData';
+import OrderData from '@/components/OrderData'
+// import { Loader } from '@googlemaps/js-api-loader'
+// import { GoogleMap } from '@googlemaps/map-loader'
 
 export default {
     name: 'OrderView',
@@ -78,6 +103,9 @@ export default {
         }
     },
     computed: {
+      showSearchedAddress(){
+        return null
+      },
       showPlatform(){
         return platform.parse(this.poster.orderData.customer_user_agent);        
       },
@@ -92,7 +120,7 @@ export default {
         const dateCurrent = new Date();
         const daysAgo = Math.round(Math.abs((dateCreated - dateCurrent) / oneDay));
         const daysText = (daysAgo > 1) ? 'days': 'day';
-        return `${daysAgo} ${daysText} ago`;
+        return daysAgo ? `${daysAgo} ${daysText} ago` : 'Vandaag';
       },
       hrefWhatsApp(){
         if(this.poster.orderData.billing.country == 'NL' && this.poster.orderData.billing.phone.startsWith('06'))
@@ -131,6 +159,23 @@ export default {
     },
     created(){
       this.getDataFromWC();
+    },
+    mounted(){
+      // const loader = new Loader({
+      //   apiKey: "AIzaSyCE1svBjPmf71zWMhdr5r0Xu9EDN2sxwHk",
+      //   version: "weekly"
+      // });
+
+      // loader.load().then((google) => {
+      //   const geocoder = new google.maps.Geocoder();
+      //   const placeId = "ChIJd1_X47W0wEcR3X6rzPxVDAs";
+      //   geocoder.geocode({ placeId: placeId }, (results, status) => {
+      //     console.log(status,results)
+      //   })
+      // })
+      // .catch(e => {
+      //   console.log(e)
+      // });
     }
 }
 </script>
