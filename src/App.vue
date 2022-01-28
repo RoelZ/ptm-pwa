@@ -44,7 +44,25 @@ import { addIcons } from "ionicons";
 import { cart, easel, analytics } from "ionicons/icons";
 
 import firebase from 'firebase';
-import './api/firebase';
+// import './api/firebase';
+import { initializeApp } from 'firebase-admin/app';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAnRjS_Qb-qU-NQNpa7diP0ubUM3egs9dg",
+  authDomain: "ptm-pwa-118f6.firebaseapp.com",
+  databaseURL: "https://ptm-pwa-118f6.firebaseio.com",
+  projectId: "ptm-pwa-118f6",
+  storageBucket: "ptm-pwa-118f6.appspot.com",
+  messagingSenderId: "14713815642",
+  appId: "1:14713815642:web:6ef3f3479fde1739d54e63"
+};
+
+const firebaseApp = initializeApp(firebaseConfig);
+
+// initializeApp({
+//     credential: applicationDefault(),
+//     databaseURL: 'https://ptm-pwa-118f6.firebaseio.com'
+// });
 
 addIcons({
   "md-cart": cart.md,

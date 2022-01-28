@@ -5,8 +5,8 @@ import OrderView from './views/Order.vue'
 import Editor from './views/Editor.vue'
 import Event from './views/Event.vue'
 import Login from './views/Login.vue'
-import firebase from 'firebase'
-import './api/firebase'
+// import firebase from 'firebase'
+// import './api/firebase'
 
 import { IonicVueRouter } from '@ionic/vue'
 
@@ -21,7 +21,7 @@ let router = new IonicVueRouter({
       name: 'home',
       component: Home,
       meta: {
-        requiresAuth: true
+        requiresAuth: false
       }
     },
     {
