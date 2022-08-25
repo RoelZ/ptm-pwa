@@ -221,7 +221,7 @@ export default {
       let pastDate = new Date(currentDate);
       pastDate.setDate(pastDate.getDate() - 5);
 
-      this.$woocommerce.get(`orders?&status=completed&before=${pastDate.toISOString().slice(0, -5)}&after=2020-11-12T23:00:00&per_page=80` )
+      this.$woocommerce.get(`orders?&status=completed&before=${pastDate.toISOString().slice(0, -5)}&after=2022-06-28T23:00:00&per_page=80` )
         .then((response) => {
           response.data.filter(function(order) {
             console.log(`(${order.billing.country}) ${order.billing.first_name}`);
