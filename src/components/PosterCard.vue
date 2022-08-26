@@ -59,6 +59,7 @@ export default {
       default: 0
     },
     poster: Object,
+    sku: String,
     zomaar: Boolean,
     shipping: Object
   },
@@ -81,26 +82,49 @@ export default {
   computed: {
     posterItem(){
       let express = RegExp('Express*').test(this.poster.shipping_lines[0].method_title);
-      let size = (this.poster.line_items[this.lineItem].meta_data[1].value == '30x40') ? 'S' : 'L'
+      let size = (this.poster.line_items[this.lineItem].meta_data[1].value == '30x40cm') ? 'S' : 'L'
 
       // onderstaande gaat fout wanneer er een line_item mist (meta_data[7], meta_data[8], etc)
       // onderstaande mist meerder items in cart (line_items[this.lineItem])
       // (this.poster.line_items.length)
 
-      let oldOrder = (this.poster.line_items[this.lineItem].meta_data[2].key == '_Place ID') ? 1 : 0;
+      // let oldOrder = (this.poster.line_items[this.lineItem].meta_data[2].key == '_Place ID') ? 1 : 0;
+
+      // "<a href=\"https://tiles.placethemoment.com/styles/granite/static/5.4083633422852,51.419763826697,5.5051803588867,51.480100013662/1024x1024@4x.png?path=5.460205078125,51.44820343847695|5.460205078125,51.449203438477&stroke=rgb(255,0,255)&witdh=1\">Print poster</a>"
+      if(this.sku === "1019"){
+        return {
+          id: this.poster.id,
+          size,
+          design: this.poster.line_items[this.lineItem].meta_data[0].value,
+          // marker: this.poster.line_items[this.lineItem].meta_data[6].value,
+          moment: this.poster.line_items[this.lineItem].meta_data[5].value,
+          subline: this.poster.line_items[this.lineItem].meta_data[6].value,
+          tagline: this.poster.line_items[this.lineItem].meta_data[7].value,
+          lowres: this.poster.line_items[this.lineItem].meta_data[8].value,
+          // highres: this.poster.line_items[this.lineItem].meta_data[11].value.match(/"(.*?)"/gi)[0].slice(1,-1),
+          hash: this.poster.cart_hash,
+          language: this.poster.lang,
+          country: this.poster.shipping.country,
+          length: (this.poster.line_items.length > 1) ? '+' : '',
+          shipping: this.poster.shipping_lines[0].method_title,
+          express,
+          labelColor: express ? 'danger' : '',        
+          notes: this.poster.customer_note
+        }
+      }
 
       return {
         id: this.poster.id,
         size,
         design: this.poster.line_items[this.lineItem].meta_data[0].value,
-        marker: this.poster.line_items[this.lineItem].meta_data[this.metaData(7, oldOrder)].value,
-        moment: this.poster.line_items[this.lineItem].meta_data[this.metaData(8, oldOrder)].value,
-        subline: this.poster.line_items[this.lineItem].meta_data[this.metaData(9, oldOrder)].value,
-        tagline: this.poster.line_items[this.lineItem].meta_data[this.metaData(10, oldOrder)].value,
-        lowres: this.poster.line_items[this.lineItem].meta_data[this.metaData(11, oldOrder)].value.substring(64, 9),
-        highres: this.poster.line_items[this.lineItem].meta_data[this.metaData(12, oldOrder)].value.match(/"(.*?)"/gi)[0].slice(1,-1),
+        marker: this.poster.line_items[this.lineItem].meta_data[6].value,
+        moment: this.poster.line_items[this.lineItem].meta_data[7].value,
+        subline: this.poster.line_items[this.lineItem].meta_data[8].value,
+        tagline: this.poster.line_items[this.lineItem].meta_data[9].value,
+        lowres: this.poster.line_items[this.lineItem].meta_data[10].value,
+        highres: this.poster.line_items[this.lineItem].meta_data[11],    // old: .value.match(/"(.*?)"/gi)[0].slice(1,-1),
         hash: this.poster.cart_hash,
-        language: this.poster.line_items[this.lineItem].meta_data[this.metaData(13, oldOrder)] ? this.poster.line_items[this.lineItem].meta_data[this.metaData(13, oldOrder)].value : 'nl',
+        language: this.poster.lang,
         country: this.poster.shipping.country,
         length: (this.poster.line_items.length > 1) ? '+' : '',
         shipping: this.poster.shipping_lines[0].method_title,
@@ -358,7 +382,7 @@ export default {
            : { "rgb": { "blue": 70, "green": 174, "red": 216 } }    
     },
     textColor(design) {
-      return (design === 'snow' || design === 'honey') ? this.rgb16('black')
+      return (design === 'snow' || design === 'honey' || design === 'hay') ? this.rgb16('black')
            : (design === 'granite' || design === 'mint') ? this.rgb16('snow')
            : this.rgb16('granite')
     },

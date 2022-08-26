@@ -14,11 +14,11 @@
         <ion-label>
           <h2>{{order.id}}</h2>
           <div v-for="(item, index) in order.line_items" :key="item.id">            
-            <h3 v-if="item.sku == 1015">
-              {{index}}. PTM-{{posterItem(item).size}}-{{order.id}}-{{posterItem(item).design}}-{{order.shipping.country}}-{{posterItem(item).language}}
+            <h3 v-if="(item.sku == 1015 || item.sku == 1019)">
+              {{index + 1}}. PTM-{{posterItem(item).size}}-{{order.id}}-{{posterItem(item).design}}-{{order.shipping.country}}-{{posterItem(item).language}}
             </h3>
             <h3 v-else>
-              {{index}}. {{frameItem(item)}}
+              {{index + 1}}. {{frameItem(item)}}
             </h3>
           </div>
         </ion-label>
@@ -66,8 +66,9 @@ export default {
       this.orders.forEach(order => {
         textString += `${order.id}\n`;
         order.line_items.forEach((item, index) => {
+          console.log(item.sku)
           index++;
-          if(item.sku == 1015)
+          if(item.sku == 1015 || item.sku == 1019)
             textString += `${index}. PTM-${this.posterItem(item).size}-${order.id}-${this.posterItem(item).design}-${order.shipping.country}-${this.posterItem(item).language}\n`;
           else
             textString += `${index}. ${this.frameItem(item)}\n`;
@@ -90,25 +91,38 @@ export default {
   },
   methods: {
     posterItem(item){
+      if(item.sku == 1019){
+        return {
+          design: (item.meta_data[0].value === 'moon') ? 0 
+              : (item.meta_data[0].value === 'granite') ? 1 
+              : (item.meta_data[0].value === 'olve') ? 2 
+              : (item.meta_data[0].value === 'hay') ? 3 
+              : (item.meta_data[0].value === 'redwood') ? 4
+              : (item.meta_data[0].value === 'dustyrose') ? 5
+              : 6,
+          size: (item.meta_data[1].value == '30x40cm') ? 'S' : 'L',
+          language: item.meta_data[9].value,
+        }
+      } 
       return {
         design: (item.meta_data[0].value === 'snow') ? 0 
               : (item.meta_data[0].value === 'moon') ? 1 
               : (item.meta_data[0].value === 'granite') ? 2 
               : (item.meta_data[0].value === 'mint') ? 3 
               : 4,
-        size: (item.meta_data[1].value == '30x40') ? 'S' : 'L',
-        language: item.meta_data[(item.meta_data[2].key == '_Place ID') ? 12 : 13].value,
+        size: (item.meta_data[1].value == '30x40cm') ? 'S' : 'L',
+        language: item.meta_data[12].value,
       }
     },
     frameItem(item){
-      return (item.variation_id === 9772 || item.variation_id === 9630) ? 'HOS'
-            : (item.variation_id === 9773 || item.variation_id === 9631) ? 'HOL'
-            : (item.variation_id === 9774 || item.variation_id === 9632) ? 'HBS'
-            : (item.variation_id === 9775 || item.variation_id === 9633) ? 'HBL'
-            : (item.variation_id === 9777 || item.variation_id === 9626) ? 'FOS'
-            : (item.variation_id === 9778 || item.variation_id === 9627) ? 'FOL'
-            : (item.variation_id === 9779 || item.variation_id === 9628) ? 'FBS'
-            : (item.variation_id === 9780 || item.variation_id === 9629) ? 'FBL'
+      return (item.variation_id === 12686 || item.variation_id === 14710) ? 'HOS'
+            : (item.variation_id === 12687 || item.variation_id === 14711) ? 'HOL'
+            : (item.variation_id === 12688 || item.variation_id === 14712) ? 'HBS'
+            : (item.variation_id === 12689 || item.variation_id === 14713) ? 'HBL'
+            : (item.variation_id === 12694 || item.variation_id === 14701) ? 'FOS'
+            : (item.variation_id === 12695 || item.variation_id === 14703) ? 'FOL'
+            : (item.variation_id === 12696 || item.variation_id === 14704) ? 'FBS'
+            : (item.variation_id === 12697 || item.variation_id === 14702) ? 'FBL'
             : 'fout'
     },
     downloadList(){

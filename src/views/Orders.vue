@@ -55,10 +55,10 @@
               <div v-for="(order, index) in filterOrdersByPoster" :key="index">
                 <ion-slides v-if="order.line_items && order.line_items.length > 1" pager>
                   <ion-slide v-for="(poster, index) in order.line_items" :key="index">
-                    <poster-card :line-item="index" :poster="order" :key="poster.id" :zomaar="selected" />
+                    <poster-card :line-item="index" :poster="order" :sku="poster.sku" :key="poster.id" :zomaar="selected" />
                   </ion-slide>
                 </ion-slides>
-                <poster-card v-else :poster="order" :key="order.id" :zomaar="selected" />
+                <poster-card v-else :poster="order" :sku="order.line_items[0].sku" :key="order.id" :zomaar="selected" />
               </div>
             </div>
           </ion-col>
@@ -114,7 +114,7 @@ export default {
     filterOrdersByPoster(){
       return this.orderData.map((order) => {
         const { line_items } = order;
-        const filteredLineItems = line_items.filter((item) => item.sku === "1015")
+        const filteredLineItems = line_items.filter((item) => item.sku === "1015" || item.sku === "1019")
         // return filteredLineItems;
         if (!filteredLineItems.length) return;
         return { ...order, line_items: filteredLineItems };
