@@ -44,6 +44,7 @@ import Vue from 'vue'
 import OrderComments from '@/components/OrderComments';
 import { addIcons } from "ionicons";
 import { cube, cloudy, mailUnread } from "ionicons/icons";
+import poster from '../mixins/poster';
 
 addIcons({
   "md-cube": cube.md,
@@ -122,7 +123,7 @@ export default {
         subline: this.poster.line_items[this.lineItem].meta_data[8].value,
         tagline: this.poster.line_items[this.lineItem].meta_data[9].value,
         lowres: this.poster.line_items[this.lineItem].meta_data[10].value,
-        highres: this.poster.line_items[this.lineItem].meta_data[11],    // old: .value.match(/"(.*?)"/gi)[0].slice(1,-1),
+        highres: this.poster.line_items[this.lineItem].meta_data[11].value,    // old: .value.match(/"(.*?)"/gi)[0].slice(1,-1),
         hash: this.poster.cart_hash,
         language: this.poster.lang,
         country: this.poster.shipping.country,
@@ -231,16 +232,22 @@ export default {
         });
     },
     async createPDF(poster){
-      await this.$photoshop.post('/renditionCreate',this.adobeObject(poster))
-        .then(response => this.getAdobeStatus(response.data._links.self.href,poster,true))
+      await this.$photoshop.post('/text',this.adobeTextObject(poster))
+      // await this.$photoshop.post('/renditionCreate',this.adobeObject(poster))
+        .then(response => this.getAdobeStatus(response.data._links.self.href, poster, 'layers'))
+        .catch(error => this.openToast('failed', error.message));
+    },
+    async applyLayerChanges(poster){
+      await this.$photoshop.post('/documentOperations',this.adobeAdjustLayersObject(poster))
+        .then(response => this.getAdobeStatus(response.data._links.self.href, poster, (this.sku !== "1091") ? 'markers' : null))
         .catch(error => this.openToast('failed', error.message));
     },
     async applyActions(poster){
-      await this.$photoshop.post('/batchPlay',this.actionsObject(poster))
+      await this.$photoshop.post('/batchPlay',this.adobeActionsObject(poster))
         .then(response => this.getAdobeStatus(response.data._links.self.href, poster))
         .catch(error => this.openToast('failed', error.message));
     },
-    async getAdobeStatus(url, poster, actions = false){
+    async getAdobeStatus(url, poster, next){
       const msg = poster ? `Creating PTM-${poster.size}-${poster.id}-${this.designNumber(poster.design)}${this.lineItemLabel}-${this.posterItem.country}-${this.posterItem.language}.psd <ion-spinner name="dots" style="vertical-align: middle"></ion-spinner>` : 'Generating high-resolution map  <ion-spinner name="dots" style="vertical-align: middle"></ion-spinner>';
       const getStatus = await this.$photoshop.get(url);
       getStatus.data.outputs.forEach(item => {
@@ -250,7 +257,7 @@ export default {
             this.openToast(item.status, msg);
           }
           setTimeout(() => {
-            this.getAdobeStatus(url, poster, actions);
+            this.getAdobeStatus(url, poster, next);
           }, 2000);
         } else if(item.status === 'pending'){
           if(!this.loading){            
@@ -267,7 +274,16 @@ export default {
           // item.errors.details.forEach(error => this.presentAlert(item.errors.title, error.name, error.reason));
         }
         else if(item.status === 'succeeded'){
-          if(actions){
+          // setTimeout(() => {
+          //   this.applyLayerChanges(poster);
+          // },2500);
+
+          if(next === "layers"){
+            setTimeout(() => {
+              this.applyLayerChanges(poster);
+              // this.applyActions(poster);
+            },2500);
+          } else if(next === "markers"){
             setTimeout(() => {
               this.applyActions(poster);
             },2500);
@@ -377,16 +393,40 @@ export default {
     rgb(color){
       return (color === 'granite') ? { "rgb": { "blue": 92, "green": 87, "red": 84 } }
            : (color === 'mint') ? { "rgb": { "blue": 137, "green": 161, "red": 111 } }
+           : (color === 'olive') ? { "rgb": { "blue": 111, "green": 136, "red": 146 } }
+           : (color === 'redwood') ? { "rgb": { "blue": 62, "green": 82, "red": 163 } }
+           : (color === 'dustyrose') ? { "rgb": { "blue": 130, "green": 135, "red": 176 } }
            : (color === 'snow') ? { "rgb": { "blue": 255, "green": 255, "red": 255 } }
            : (color === 'black') ? { "rgb": { "blue": 0, "green": 0, "red": 0 } }
            : { "rgb": { "blue": 70, "green": 174, "red": 216 } }    
     },
     textColor(design) {
-      return (design === 'snow' || design === 'honey' || design === 'hay') ? this.rgb16('black')
-           : (design === 'granite' || design === 'mint') ? this.rgb16('snow')
-           : this.rgb16('granite')
+      return (design === 'snow' || design === 'honey' || design === 'hay') ? this.adobeColor('black')
+           : (design === 'granite' || design === 'mint') ? this.adobeColor('snow')
+           : (design === 'olive') ? this.adobeColor('olive')
+           : (design === 'redwood') ? this.adobeColor('redwood')
+           : (design === 'dustyrose') ? this.adobeColor('dustyrose')
+           : this.adobeColor('granite')
+    },
+    adobeColor(color) {
+      return (color === 'granite') ? { "blue": 11822, "green": 11180, "red": 10794 }
+           : (color === 'mint') ? { "blue": 14264, "green": 20689, "red": 17605 }
+           : (color === 'olive') ? { "blue": 111, "green": 136, "red": 146 }
+           : (color === 'redwood') ? { "blue": 62, "green": 82, "red": 163 }
+           : (color === 'dustyrose') ? { "blue": 130, "green": 135, "red": 176 }
+           : (color === 'snow') ? { "blue": 32768, "green": 32768, "red": 32768 }
+           : (color === 'black') ? { "blue": 0, "green": 0, "red": 0 }
+           : { "blue": 27756, "green": 22359, "red": 8995 }
     },
     designNumber(design){
+      if(poster.sku == "1019"){
+        return  (design === 'moon') ? 0 
+              : (design === 'granite') ? 1 
+              : (design === 'olive') ? 2 
+              : (design === 'hay') ? 3 
+              : (design === 'redwood') ? 4
+              : 5
+      }
       return (design === 'snow') ? 0 
            : (design === 'moon') ? 1 
            : (design === 'granite') ? 2 
@@ -395,22 +435,40 @@ export default {
     },
     editMap(poster){
       return {
-        "id": (poster.size === 'L') ? 281 : 590,
+        "id": (poster.size === 'L') ? 835 : 590,
         "edit":{},
+        "index": 14,
+        "locked":false,
+        "type": "smartObject",
         "name": "MAP",
+        "visible": true,
         "input":{
-          "href":`/files/PTM/Maps/${poster.id}-${this.designNumber(poster.design)}${this.lineItemLabel}.png`,
+          "href": (this.sku == "1019") ? `/files/PTM/Templates/celestial.png` : `/files/PTM/Maps/${poster.id}-${this.designNumber(poster.design)}${this.lineItemLabel}.png`,
           "storage":"adobe"
         },
-        "bounds":{
-          "height": (poster.size === 'L') ? 4729 : 2877,
-          "left": (poster.size === 'L') ? 661 : 404,
-          "top": (poster.size === 'L') ? 945 : 523,
-          "width": (poster.size === 'L') ? 4728 : 2877
+        "smartObject" : {                
+          "type" : "image/png"
+        },
+        "attributes":{
+          "bounds":{
+            "height": (poster.size === 'L') ? 4729 : 2880,
+            "left": (poster.size === 'L') ? 662 : 404,
+            "top": (poster.size === 'L') ? 945 : 523,
+            "width": (poster.size === 'L') ? 4727 : 2880
+          },
         },
       }
     },
     editPin(marker, size){
+      if(this.sku == "1019"){
+        return {
+          "id": (size === 'L') ? 792 : 796,
+          "edit":{},
+          "name": "HEART",
+          "visible": false
+        }
+      }
+
       if(marker === 'heart'){
         return {
           "id": (size === 'L') ? 792 : 796,
@@ -470,17 +528,11 @@ export default {
         }
       }
     },
-    adobeObject(poster){
-      let snow = (poster.design === 'snow') ? true : false
-      let moon = (poster.design === 'moon') ? true : false
-      let granite = (poster.design === 'granite') ? true : false
-      let mint = (poster.design === 'mint') ? true : false
-      let honey = (poster.design === 'honey') ? true : false
+    adobeTextObject(poster){
 
       return {
         "inputs": [
           {
-            // "href": `/files/PTM/Templates/PTM-${poster.size.toUpperCase()}-XXXX-1-NL-nl.psd`,
             "href": `/files/PTM/Templates/PTM-${poster.size}-XXXX-1-NL-nl.psd`,
             "storage": "adobe"
           }
@@ -489,73 +541,113 @@ export default {
           "fonts": [
             {
               "storage": "adobe",
-              "href": "/files/Fonts/Open_Sans/OpenSans-Light.ttf"
+              "href": "/files/PTM/Fonts/OpenSans-Light.ttf"
             },
             {
               "storage": "adobe",
-              "href": "/files/Fonts/Open_Sans/OpenSans-CondensedLight.ttf"
+              "href": "/files/PTM/Fonts/OpenSans-CondensedLight.ttf"
             }
           ],
           "layers":[
-            this.editMap(poster),
-            this.editPin(poster.marker, poster.size),
+            // this.editMap(poster),
+            // this.editPin(poster.marker, poster.size),
             {
-              "id":225,
-              "edit":{},
+              // "id":225,
+              // "edit":{},
               "name": "TITLE",
               "text":{
-                "content": poster.moment.toUpperCase(),
+                "antiAlias": "antiAliasSharp",
+                "content": poster.moment,
                 "characterStyles": [
                   { 
-                    "fontColor": this.textColor(poster.design),
-                    "fontName": "OpenSans-CondensedLight"
+                    "color": this.textColor(poster.design),
+                    "fontPostScriptName": "OpenSansCondensed-Light",
+                    "fontCaps": "allCaps",
+                    "tracking": 100,
                   }
-                ]
+                ],
+                "paragraphStyles": [{
+                  "align": "center"
+                }]
               },
             },
             {
-              "id":226,
-              "edit":{},        
+              // "id":226,
+              // "edit":{},        
               "name": "LABEL",
               "text":{
                 "content": `PTM-${poster.size}-${poster.id}-${this.designNumber(poster.design)}${this.lineItemLabel}-${poster.country.toUpperCase()}-${poster.language}`,
                 "characterStyles": [
                   { 
-                    "fontColor": this.textColor(poster.design),
-                    "fontName": "OpenSans-Light"
+                    "color": this.textColor(poster.design),
+                    "fontPostScriptName": "OpenSans-Light"
                   }
                 ]
               },
             },
             
             {
-              "id":224,
-              "edit":{},
+              // "id":224,
+              // "edit":{},
               "name": "SUBLINE",
               "text":{
                 "content": poster.subline,
                 "characterStyles": [
                   { 
-                    "fontColor": this.textColor(poster.design),
-                    "fontName":"OpenSans-Light"
+                    "color": this.textColor(poster.design),
+                    "fontPostScriptName":"OpenSans-Light",
                   }
                 ]
               },
             },
             {
-              "id":223,
-              "edit":{},        
+              // "id":223,
+              // "edit":{},        
               "name": "TAGLINE",
               "text":{
                 "content":  poster.tagline,
                 "characterStyles": [
                   { 
-                    "fontColor": this.textColor(poster.design),
-                    "fontName":"OpenSans-Light" 
+                    "color": this.textColor(poster.design),
+                    "fontPostScriptName":"OpenSans-Light" 
                   }
                 ]
               },
-            },
+            }
+          ]
+        },
+        "outputs":[
+          {
+            "href":`/files/PTM/Templates/outputs/PTM-${poster.size}-${poster.id}-${this.designNumber(poster.design)}${this.lineItemLabel}-${poster.country}-${poster.language}.psd`,
+            "storage":"adobe",
+            "type":"vnd.adobe.photoshop",
+            "overwrite":true
+          }
+        ]
+      }
+    },
+    adobeAdjustLayersObject(poster){
+      let snow = (poster.design === 'snow') ? true : false
+      let moon = (poster.design === 'moon') ? true : false
+      let granite = (poster.design === 'granite') ? true : false
+      let mint = (poster.design === 'mint') ? true : false
+      let honey = (poster.design === 'honey') ? true : false
+      let olive = (poster.design === 'olive') ? true : false
+      let hay = (poster.design === 'hay') ? true : false
+      let redwood = (poster.design === 'redwood') ? true : false
+      let dustyrose = (poster.design === 'dustyrose') ? true : false
+
+      return {
+        "inputs": [
+          {
+            "href": `/files/PTM/Templates/outputs/PTM-${poster.size}-${poster.id}-${this.designNumber(poster.design)}${this.lineItemLabel}-${poster.country}-${poster.language}.psd`,
+            "storage": "adobe"
+          }
+        ],
+        "options":{
+          "layers":[
+            this.editMap(poster),
+            this.editPin(poster.marker, poster.size),
             {
               "edit":{}, 
               "id":230,
@@ -571,13 +663,31 @@ export default {
               "id":551,
               "edit":{},        
               "name": "BLACK LINE",
-              "visible": (snow || honey) ? true : false
+              "visible": (snow || honey || hay) ? true : false
             },
             {
               "id":33,
               "edit":{},        
               "name": "GRANITE LINE",
               "visible": moon
+            },
+            {
+              "id": (poster.size === 'L') ? 819 : 817,
+              "edit":{},        
+              "name": "OLIVE LINE",
+              "visible": olive
+            },
+            {
+              "id": (poster.size === 'L') ? 818 : 816,
+              "edit":{},        
+              "name": "REDWOOD LINE",
+              "visible": redwood
+            },
+            {
+              "id": (poster.size === 'L') ? 817 : 815,
+              "edit":{},        
+              "name": "DUSTYROSE LINE",
+              "visible": dustyrose
             },
             {
               "id":548,
@@ -597,19 +707,15 @@ export default {
               "name": "HONEY BG",
               "visible": honey
             },
-            // Small only
-            // (poster.size === 'S') ? { "edit":{}, "id":740, "visible": false } : ''
-          ]
+            {
+              "id": (poster.size === 'L') ? 816 : 818,
+              "edit":{},        
+              "name": "KABANA BG",
+              "visible": this.sku == "1019"
+            }
+            ]
         },
         "outputs":[
-          // {
-          //   "href":`/files/PTM/Templates/outputs/PTM-${poster.size}-${poster.id}-${this.designNumber(poster.design)}-${this.posterItem.country}-${this.posterItem.language}.jpg`,
-          //   "storage":"adobe",
-          //   "type":"image/jpeg",
-          //   "width":0,
-          //   "overwrite":true,
-          //   "quality":3
-          // },
           {
             "href":`/files/PTM/Templates/outputs/PTM-${poster.size}-${poster.id}-${this.designNumber(poster.design)}${this.lineItemLabel}-${poster.country}-${poster.language}.psd`,
             "storage":"adobe",
@@ -619,7 +725,7 @@ export default {
         ]
       }
     },
-    actionsObject(poster){
+    adobeActionsObject(poster){
       return {
         "inputs": [
           {
@@ -630,7 +736,7 @@ export default {
         "options": {
           "actions": [
             {
-              "href": `/files/actions/PTM-${poster.size}.atn`,
+              "href": "/files/PTM/Actions/PTM-Markers.atn",
               "storage": "adobe"
             }
           ]
