@@ -183,7 +183,7 @@ export default {
           const poster = item.meta_data;
           rows.push([
             order.id,
-            (poster[0].value == "50x70") ? "L" : "S",
+            (poster[0].value == "50x70cm") ? "L" : "S",
             this.getStyleId(poster[1].value),
             order.shipping.country,
             poster[13].value,
