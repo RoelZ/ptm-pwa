@@ -451,10 +451,10 @@ export default {
         },
         "attributes":{
           "bounds":{
-            "height": (poster.size === 'L') ? 4729 : 2880,
+            "height": (poster.size === 'L') ? 4747 : 2877,
             "left": (poster.size === 'L') ? 662 : 404,
             "top": (poster.size === 'L') ? 945 : 523,
-            "width": (poster.size === 'L') ? 4727 : 2880
+            "width": (poster.size === 'L') ? 4747 : 2877
           },
         },
       }

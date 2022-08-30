@@ -248,9 +248,13 @@ export default {
     batchOrders(){
       for (let poster of this.filterOrdersByPoster){
         poster.line_items.forEach((_, index) => {
-          // console.log('poster:', poster, 'index:', index)          
+          console.log('poster id + sku: ' + poster.id + ' ' + poster.line_items[index].sku)
           setTimeout(() => {
-            this.createPDF(this.posterItem(poster,index), index)              
+            if(poster.line_items[index].sku == "1019"){
+              this.createPDF(this.posterItem(poster,index), index, 'layers')
+            } else {
+              this.createPDF(this.posterItem(poster,index), index)
+            }
           }, 500)
         })
       }

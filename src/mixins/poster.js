@@ -25,7 +25,7 @@ export default {
           subline: poster.line_items[lineitem].meta_data[6].value,
           tagline: poster.line_items[lineitem].meta_data[7].value,
           lowres: poster.line_items[lineitem].meta_data[8].value,
-          // highres: poster.line_items[lineitem].meta_data[11].value.match(/"(.*?)"/gi)[0].slice(1,-1),
+          // highres: 'https://www.placethemoment.com/images/celestial.png',
           hash: poster.cart_hash,
           language: poster.lang,
           country: poster.shipping.country,
@@ -33,7 +33,8 @@ export default {
           shipping: poster.shipping_lines[0].method_title,
           express,
           labelColor: express ? 'danger' : '',        
-          notes: poster.customer_note
+          notes: poster.customer_note,
+          sku: poster.line_items[lineitem].sku
         }
       }
 
@@ -55,7 +56,8 @@ export default {
         shipping: poster.shipping_lines[0].method_title,
         express,
         labelColor: express ? 'danger' : '',        
-        notes: poster.customer_note
+        notes: poster.customer_note,
+        sku: poster.line_items[lineitem].sku
       }
     },
     rgb16(color){
@@ -93,23 +95,20 @@ export default {
            : (color === 'black') ? { "blue": 0, "green": 0, "red": 0 }
            : { "blue": 27756, "green": 22359, "red": 8995 }
     },
-    designNumber(poster, lineitem, design){
-      if(poster.line_items[lineitem].sku == "1019"){
-        return  (design === 'moon') ? 0 
-              : (design === 'granite') ? 1 
-              : (design === 'olive') ? 2 
-              : (design === 'hay') ? 3 
-              : (design === 'redwood') ? 4
+    designNumber(poster){
+      if(poster.sku == "1019"){
+        return  (poster.design === 'moon') ? 0 
+              : (poster.design === 'granite') ? 1 
+              : (poster.design === 'olive') ? 2 
+              : (poster.design === 'hay') ? 3 
+              : (poster.design === 'redwood') ? 4
               : 5
       }
-      return (design === 'snow') ? 0 
-           : (design === 'moon') ? 1 
-           : (design === 'granite') ? 2 
-           : (design === 'mint') ? 3 
+      return (poster.design === 'snow') ? 0 
+           : (poster.design === 'moon') ? 1 
+           : (poster.design === 'granite') ? 2 
+           : (poster.design === 'mint') ? 3 
            : 4
-    },
-    lineitemLabel(lineitem){
-      return lineitem ? String.fromCharCode(65 + lineitem) : ''
     },
   }  
 }
