@@ -83,7 +83,7 @@ export default {
   computed: {
     posterItem(){
       let express = RegExp('Express*').test(this.poster.shipping_lines[0].method_title);
-      let size = (this.poster.line_items[this.lineItem].meta_data[1].value == '30x40cm') ? 'S' : 'L'
+      let size = (this.poster.line_items[this.lineItem].meta_data[1].value == '30x40') ? 'S' : 'L'
 
       // onderstaande gaat fout wanneer er een line_item mist (meta_data[7], meta_data[8], etc)
       // onderstaande mist meerder items in cart (line_items[this.lineItem])
@@ -98,13 +98,13 @@ export default {
           size,
           design: this.poster.line_items[this.lineItem].meta_data[0].value,
           // marker: this.poster.line_items[this.lineItem].meta_data[6].value,
-          moment: this.poster.line_items[this.lineItem].meta_data[5].value,
-          subline: this.poster.line_items[this.lineItem].meta_data[6].value,
-          tagline: this.poster.line_items[this.lineItem].meta_data[7].value,
-          lowres: this.poster.line_items[this.lineItem].meta_data[8].value,
+          moment: this.poster.line_items[this.lineItem].meta_data[7].value,
+          subline: this.poster.line_items[this.lineItem].meta_data[8].value,
+          tagline: this.poster.line_items[this.lineItem].meta_data[9].value,
+          lowres: this.poster.line_items[this.lineItem].meta_data[12].value,
           // highres: this.poster.line_items[this.lineItem].meta_data[11].value.match(/"(.*?)"/gi)[0].slice(1,-1),
           hash: this.poster.cart_hash,
-          language: this.poster.lang,
+          language: this.poster.line_items[this.lineItem].meta_data[13].value,
           country: this.poster.shipping.country,
           length: (this.poster.line_items.length > 1) ? '+' : '',
           shipping: this.poster.shipping_lines[0].method_title,
@@ -122,10 +122,10 @@ export default {
         moment: this.poster.line_items[this.lineItem].meta_data[7].value,
         subline: this.poster.line_items[this.lineItem].meta_data[8].value,
         tagline: this.poster.line_items[this.lineItem].meta_data[9].value,
-        lowres: this.poster.line_items[this.lineItem].meta_data[10].value,
-        highres: this.poster.line_items[this.lineItem].meta_data[11].value,    // old: .value.match(/"(.*?)"/gi)[0].slice(1,-1),
+        lowres: this.poster.line_items[this.lineItem].meta_data[10].value.substring(64, 9),
+        highres: this.poster.line_items[this.lineItem].meta_data[11].value.match(/"(.*?)"/gi)[0].slice(1,-1),
         hash: this.poster.cart_hash,
-        language: this.poster.lang,
+        language: this.poster.line_items[this.lineItem].meta_data[12].value,
         country: this.poster.shipping.country,
         length: (this.poster.line_items.length > 1) ? '+' : '',
         shipping: this.poster.shipping_lines[0].method_title,
