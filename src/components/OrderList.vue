@@ -107,7 +107,7 @@ export default {
               ? 5
               : 6,
           size: item.meta_data[1].value == "30x40" ? "S" : "L",
-          language: item.meta_data[9].value,
+          language: item.meta_data[14].value,
         };
       }
       return {
