@@ -101,10 +101,10 @@ export default {
           moment: this.poster.line_items[this.lineItem].meta_data[7].value,
           subline: this.poster.line_items[this.lineItem].meta_data[8].value,
           tagline: this.poster.line_items[this.lineItem].meta_data[9].value,
-          lowres: this.poster.line_items[this.lineItem].meta_data[12].value,
+          lowres: this.poster.line_items[this.lineItem].meta_data[12].value.substring(64, 9),
           // highres: this.poster.line_items[this.lineItem].meta_data[11].value.match(/"(.*?)"/gi)[0].slice(1,-1),
           hash: this.poster.cart_hash,
-          language: this.poster.line_items[this.lineItem].meta_data[13].value,
+          language: this.poster.line_items[this.lineItem].meta_data[14].value,
           country: this.poster.shipping.country,
           length: (this.poster.line_items.length > 1) ? '+' : '',
           shipping: this.poster.shipping_lines[0].method_title,
@@ -435,7 +435,7 @@ export default {
     },
     editMap(poster){
       return {
-        "id": (poster.size === 'L') ? 835 : 590,
+        "id": (poster.size === 'L') ? 835 : 823,
         "edit":{},
         "index": 14,
         "locked":false,
@@ -451,10 +451,10 @@ export default {
         },
         "attributes":{
           "bounds":{
-            "height": (poster.size === 'L') ? 4747 : 2877,
+            "height": (poster.size === 'L') ? 4729 : 2880,
             "left": (poster.size === 'L') ? 662 : 404,
             "top": (poster.size === 'L') ? 945 : 523,
-            "width": (poster.size === 'L') ? 4747 : 2877
+            "width": (poster.size === 'L') ? 4727 : 2880
           },
         },
       }

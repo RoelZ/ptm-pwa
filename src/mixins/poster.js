@@ -27,7 +27,7 @@ export default {
           lowres: poster.line_items[lineitem].meta_data[12].value,
           // highres: 'https://www.placethemoment.com/images/celestial.png',
           hash: poster.cart_hash,
-          language: poster.lang,
+          language: poster.line_items[lineitem].meta_data[14].value,
           country: poster.shipping.country,
           length: (poster.line_items.length > 1) ? '+' : '',
           shipping: poster.shipping_lines[0].method_title,
