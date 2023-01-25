@@ -225,11 +225,24 @@ export default {
         .catch(() => alert('Probleem bij het ophalen..')); 
     },
     createMap(poster, split){
-      this.$photoshop.post('/renditionCreate',this.mapObject(poster.id, this.designNumber(poster.design), split ? split : poster.highres))
+
+      const posterurl = split ? split : poster.highres;
+      
+      this.$dropbox.post('/2/files/get_temporary_upload_link', 
+      {
+        "commit_info": { "path": `/maps/${poster.id}-${this.designNumber(poster.design)}${this.lineItemLabel}.png` }
+      })
+      .then(response => {
+        this.$photoshop.post('/renditionCreate',this.mapObject(posterurl, response.data.link))
         .then(response => this.getAdobeStatus(response.data._links.self.href))
         .catch(error => {
           this.openToast('failed', error.message, [{ side: 'start', text: 'Retry', handler: () => this.createMap(poster, poster.highres.split('?',1))}, { side: 'end', text: 'Close', handler: () => this.dismiss }])
         });
+      })
+      .catch(error => {
+        console.error(error);
+        this.openToast('failed', error.error_summary, [{ side: 'end', text: 'Close', handler: () => this.dismiss }])
+      });
     },
     async createPDF(poster){
       await this.$photoshop.post('/text',this.adobeTextObject(poster))
@@ -488,25 +501,25 @@ export default {
         }
       }
     },
-    mapObject(posterid, designNumber, posterurl){
-      return {
-        "inputs": [
-          {
-            "href": posterurl,
-            "storage": "external"
-          }
-        ],
-        "outputs":[
-          {
-            "href":`/files/PTM/Maps/${posterid}-${designNumber}${this.lineItemLabel}.png`,
-            "storage":"adobe",
-            "type":"image/png",
-            "width":0,
-            "overwrite":true,
-            "compression":"small"
-          }
-        ]
-      }
+    mapObject(posterurl, uploadlink){
+        return {
+          "inputs": [
+            {
+              "href": posterurl,
+              "storage": "external"
+            }
+          ],
+          "outputs":[
+            {
+              "href":uploadlink,
+              "storage":"dropbox",
+              "type":"image/png",
+              "width":0,
+              "overwrite":true,
+              "compression":"small"
+            }
+          ]
+        };
     },
     sendcloudObject(){
       return {

@@ -89,7 +89,21 @@ export default {
       });
     },
     mapObject(posterid, lineitem, designNumber, posterurl){
-      return {
+      
+      this.$dropbox.post('/2/files/get_temporary_upload_link', 
+      {
+        "commit_info": {
+            "path": `/maps/${posterid}-${designNumber}${this.lineItemLabel(lineitem)}.png`,
+            "mode": {
+                ".tag": "add"
+            },
+            "autorename": true
+        }
+      })
+      .then(response => {
+        console.log(response.data);
+
+        return {
         "inputs": [
           {
             "href": posterurl,
@@ -98,8 +112,8 @@ export default {
         ],
         "outputs":[
           {
-            "href":`/files/PTM/Maps/${posterid}-${designNumber}${this.lineItemLabel(lineitem)}.png`,
-            "storage":"adobe",
+            "href":response.data['content-hash'],
+            "storage":"dropbox",
             "type":"image/png",
             "width":0,
             "overwrite":true,
@@ -107,6 +121,12 @@ export default {
           }
         ]
       }
+      })
+      .catch(error => {
+        this.openToast('failed', error.message, [{ side: 'end', text: 'Close', handler: () => this.dismiss }])
+      });
+
+      
     },
     adobeTextObject(poster, lineitem){
 
