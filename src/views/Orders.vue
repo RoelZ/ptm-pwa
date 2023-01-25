@@ -55,10 +55,10 @@
               <div v-for="(order, index) in filterOrdersByPoster" :key="index">
                 <ion-slides v-if="order.line_items && order.line_items.length > 1" pager>
                   <ion-slide v-for="(poster, index) in order.line_items" :key="index">
-                    <poster-card :line-item="index" :poster="order" :key="poster.id" :zomaar="selected" />
+                    <poster-card :line-item="index" :poster="order" :sku="poster.sku" :key="poster.id" :zomaar="selected" />
                   </ion-slide>
                 </ion-slides>
-                <poster-card v-else :poster="order" :key="order.id" :zomaar="selected" />
+                <poster-card v-else :poster="order" :sku="order.line_items[0].sku" :key="order.id" :zomaar="selected" />
               </div>
             </div>
           </ion-col>
@@ -114,7 +114,7 @@ export default {
     filterOrdersByPoster(){
       return this.orderData.map((order) => {
         const { line_items } = order;
-        const filteredLineItems = line_items.filter((item) => item.sku === "1015")
+        const filteredLineItems = line_items.filter((item) => item.sku === "1015" || item.sku === "1019")
         // return filteredLineItems;
         if (!filteredLineItems.length) return;
         return { ...order, line_items: filteredLineItems };
@@ -183,7 +183,7 @@ export default {
           const poster = item.meta_data;
           rows.push([
             order.id,
-            (poster[0].value == "50x70") ? "L" : "S",
+            (poster[0].value == "50x70cm") ? "L" : "S",
             this.getStyleId(poster[1].value),
             order.shipping.country,
             poster[13].value,
@@ -221,7 +221,7 @@ export default {
       let pastDate = new Date(currentDate);
       pastDate.setDate(pastDate.getDate() - 5);
 
-      this.$woocommerce.get(`orders?&status=completed&before=${pastDate.toISOString().slice(0, -5)}&after=2020-11-12T23:00:00&per_page=80` )
+      this.$woocommerce.get(`orders?&status=completed&before=${pastDate.toISOString().slice(0, -5)}&after=2022-06-28T23:00:00&per_page=80` )
         .then((response) => {
           response.data.filter(function(order) {
             console.log(`(${order.billing.country}) ${order.billing.first_name}`);
@@ -248,9 +248,13 @@ export default {
     batchOrders(){
       for (let poster of this.filterOrdersByPoster){
         poster.line_items.forEach((_, index) => {
-          // console.log('poster:', poster, 'index:', index)          
+          console.log('poster id + sku: ' + poster.id + ' ' + poster.line_items[index].sku)
           setTimeout(() => {
-            this.createPDF(this.posterItem(poster,index), index)              
+            if(poster.line_items[index].sku == "1019"){
+              this.createPDF(this.posterItem(poster,index), index, 'layers')
+            } else {
+              this.createPDF(this.posterItem(poster,index), index)
+            }
           }, 500)
         })
       }
