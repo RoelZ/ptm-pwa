@@ -7,7 +7,7 @@ export default {
     posterItem(poster, lineitem){
       console.log('poster:', poster, 'lineitem:', lineitem)          
       let express = RegExp('Express*').test(poster.shipping_lines[0].method_title);
-      let size = (poster.line_items[lineitem].meta_data[1].value == '30x40') ? 'S' : 'L'
+      let size = (poster.line_items[lineitem].meta_data[1].value == '30x40cm') ? 'S' : 'L'
 
       // onderstaande gaat fout wanneer er een line_item mist (meta_data[7], meta_data[8], etc)
       // onderstaande mist meerder items in cart (line_items[lineitem])

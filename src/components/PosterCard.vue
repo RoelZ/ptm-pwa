@@ -45,6 +45,9 @@ import OrderComments from '@/components/OrderComments';
 import { addIcons } from "ionicons";
 import { cube, cloudy, mailUnread } from "ionicons/icons";
 import poster from '../mixins/poster';
+import { Dropbox } from 'dropbox';
+import dropboxConfig from '../config/dropbox';
+
 
 addIcons({
   "md-cube": cube.md,
@@ -64,12 +67,17 @@ export default {
     zomaar: Boolean,
     shipping: Object
   },
+  inject: ['fileUrls'],
   data (){
     return {      
       // id: this.poster.id,
       flipped: false,
       loading: false,
-      iets: false
+      iets: false,
+      dropbox: null,
+      posterFile: '',
+      mapFile: '',
+      uploadLink: ''
     }
   },
   created () {
@@ -83,7 +91,7 @@ export default {
   computed: {
     posterItem(){
       let express = RegExp('Express*').test(this.poster.shipping_lines[0].method_title);
-      let size = (this.poster.line_items[this.lineItem].meta_data[1].value == '30x40') ? 'S' : 'L'
+      let size = (this.poster.line_items[this.lineItem].meta_data[1].value == '30x40cm') ? 'S' : 'L'
 
       // onderstaande gaat fout wanneer er een line_item mist (meta_data[7], meta_data[8], etc)
       // onderstaande mist meerder items in cart (line_items[this.lineItem])
@@ -98,13 +106,13 @@ export default {
           size,
           design: this.poster.line_items[this.lineItem].meta_data[0].value,
           // marker: this.poster.line_items[this.lineItem].meta_data[6].value,
-          moment: this.poster.line_items[this.lineItem].meta_data[7].value,
-          subline: this.poster.line_items[this.lineItem].meta_data[8].value,
-          tagline: this.poster.line_items[this.lineItem].meta_data[9].value,
-          lowres: this.poster.line_items[this.lineItem].meta_data[11],
+          moment: this.poster.line_items[this.lineItem].meta_data[5].value,
+          subline: this.poster.line_items[this.lineItem].meta_data[6].value,
+          tagline: this.poster.line_items[this.lineItem].meta_data[7].value,
+          lowres: this.poster.line_items[this.lineItem].meta_data[8].value,
           // highres: this.poster.line_items[this.lineItem].meta_data[11].value.match(/"(.*?)"/gi)[0].slice(1,-1),
           hash: this.poster.cart_hash,
-          language: this.poster.line_items[this.lineItem].meta_data[14].value,
+          language: this.poster.line_items[this.lineItem].meta_data[9].value,
           country: this.poster.shipping.country,
           length: (this.poster.line_items.length > 1) ? '+' : '',
           shipping: this.poster.shipping_lines[0].method_title,
@@ -225,16 +233,24 @@ export default {
         })
         .catch(() => alert('Probleem bij het ophalen..')); 
     },
+    getDropbox() {
+      this.dropbox = new Dropbox(dropboxConfig);
+    },
     createMap(poster, split){
+      this.getDropbox();
 
       const posterurl = split ? split : poster.highres;
       
-      this.$dropbox.post('/2/files/get_temporary_upload_link', 
-      {
-        "commit_info": { "path": `/maps/${poster.id}-${this.designNumber(poster.design)}${this.lineItemLabel}.png` }
-      })
-      .then(response => {
-        this.$photoshop.post('/renditionCreate',this.mapObject(posterurl, response.data.link))
+      this.dropbox.filesGetTemporaryUploadLink({
+          'commit_info': {
+            path: `/maps/${poster.id}-${this.designNumber(poster.design)}${this.lineItemLabel}.png`,
+            "mode": {
+              ".tag": "overwrite"
+            },
+            autorename: false
+          }
+      }).then(({ result }) => {
+        this.$photoshop.post('/renditionCreate',this.mapObject(posterurl, result.link))
         .then(response => this.getAdobeStatus(response.data._links.self.href))
         .catch(error => {
           this.openToast('failed', error.message, [{ side: 'start', text: 'Retry', handler: () => this.createMap(poster, poster.highres.split('?',1))}, { side: 'end', text: 'Close', handler: () => this.dismiss }])
@@ -246,20 +262,71 @@ export default {
       });
     },
     async createPDF(poster){
-      await this.$photoshop.post('/text',this.adobeTextObject(poster))
-      // await this.$photoshop.post('/renditionCreate',this.adobeObject(poster))
+      this.getDropbox();
+      this.dropbox.filesGetTemporaryUploadLink({
+          'commit_info': {
+            path: `/outputs/PTM-${poster.size}-${poster.id}-${this.designNumber(poster.design)}${this.lineItemLabel}-${poster.country}-${poster.language}.psd`,
+            "mode": {
+              ".tag": "overwrite"
+            },
+            autorename: false
+          }
+      }).then(({ result }) => {
+        this.uploadLink = result.link;
+        this.$photoshop.post('/text',this.adobeTextObject(poster))
         .then(response => this.getAdobeStatus(response.data._links.self.href, poster, 'layers'))
         .catch(error => this.openToast('failed', error.message));
+      })
     },
     async applyLayerChanges(poster){
-      await this.$photoshop.post('/documentOperations',this.adobeAdjustLayersObject(poster))
-        .then(response => this.getAdobeStatus(response.data._links.self.href, poster, (this.sku !== "1091") ? 'markers' : null))
-        .catch(error => this.openToast('failed', error.message));
+      this.getDropbox();
+      this.dropbox.filesGetTemporaryLink({ path: `/outputs/PTM-${poster.size}-${poster.id}-${this.designNumber(poster.design)}${this.lineItemLabel}-${poster.country}-${poster.language}.psd` })
+      .then(({ result }) => {
+        this.posterFile = result.link;
+
+        this.dropbox.filesGetTemporaryLink({ path: `/maps/${poster.id}-${this.designNumber(poster.design)}${this.lineItemLabel}.png` })
+        .then(({ result }) => {
+          this.mapFile = result.link
+
+          this.getDropbox();
+          this.dropbox.filesGetTemporaryUploadLink({
+              'commit_info': {
+                path: `/outputs/PTM-${poster.size}-${poster.id}-${this.designNumber(poster.design)}${this.lineItemLabel}-${poster.country}-${poster.language}.psd`,
+                "mode": {
+                  ".tag": "overwrite"
+                },
+                autorename: false
+              }
+          }).then(({ result }) => {
+            this.uploadLink = result.link;
+            this.$photoshop.post('/documentOperations',this.adobeAdjustLayersObject(poster))
+              .then(response => this.getAdobeStatus(response.data._links.self.href, poster, (this.sku !== "1091") ? 'markers' : null))
+              .catch(error => this.openToast('failed', error.message));
+          })
+        })
+      })
     },
     async applyActions(poster){
-      await this.$photoshop.post('/batchPlay',this.adobeActionsObject(poster))
-        .then(response => this.getAdobeStatus(response.data._links.self.href, poster))
-        .catch(error => this.openToast('failed', error.message));
+      this.getDropbox();
+      this.dropbox.filesGetTemporaryLink({ path: `/outputs/PTM-${poster.size}-${poster.id}-${this.designNumber(poster.design)}${this.lineItemLabel}-${poster.country}-${poster.language}.psd` })
+      .then(({ result }) => {
+        this.posterFile = result.link;
+
+        this.dropbox.filesGetTemporaryUploadLink({
+            'commit_info': {
+              path: `/outputs/PTM-${poster.size}-${poster.id}-${this.designNumber(poster.design)}${this.lineItemLabel}-${poster.country}-${poster.language}.psd`,
+              "mode": {
+                ".tag": "overwrite"
+              },
+              autorename: false
+            }
+        }).then(({ result }) => {
+          this.uploadLink = result.link;
+          this.$photoshop.post('/batchPlay',this.adobeActionsObject(poster))
+            .then(response => this.getAdobeStatus(response.data._links.self.href, poster))
+            .catch(error => this.openToast('failed', error.message));
+        })
+      })
     },
     async getAdobeStatus(url, poster, next){
       const msg = poster ? `Creating PTM-${poster.size}-${poster.id}-${this.designNumber(poster.design)}${this.lineItemLabel}-${this.posterItem.country}-${this.posterItem.language}.psd <ion-spinner name="dots" style="vertical-align: middle"></ion-spinner>` : 'Generating high-resolution map  <ion-spinner name="dots" style="vertical-align: middle"></ion-spinner>';
@@ -423,14 +490,14 @@ export default {
            : this.adobeColor('granite')
     },
     adobeColor(color) {
-      return (color === 'granite') ? { "blue": 11822, "green": 11180, "red": 10794 }
-           : (color === 'mint') ? { "blue": 14264, "green": 20689, "red": 17605 }
+      return (color === 'granite') ? { "blue": 92, "green": 87, "red": 84 }
+           : (color === 'mint') ? { "blue": 137, "green": 161, "red": 111 }
            : (color === 'olive') ? { "blue": 111, "green": 136, "red": 146 }
            : (color === 'redwood') ? { "blue": 62, "green": 82, "red": 163 }
            : (color === 'dustyrose') ? { "blue": 130, "green": 135, "red": 176 }
-           : (color === 'snow') ? { "blue": 32768, "green": 32768, "red": 32768 }
+           : (color === 'snow') ? { "blue": 255, "green": 255, "red": 255 }
            : (color === 'black') ? { "blue": 0, "green": 0, "red": 0 }
-           : { "blue": 27756, "green": 22359, "red": 8995 }
+           : { "blue": 70, "green": 174, "red": 216 }
     },
     designNumber(design){
       if(poster.sku == "1019"){
@@ -457,8 +524,8 @@ export default {
         "name": "MAP",
         "visible": true,
         "input":{
-          "href": (this.sku == "1019") ? `/files/PTM/Templates/celestial.png` : `/files/PTM/Maps/${poster.id}-${this.designNumber(poster.design)}${this.lineItemLabel}.png`,
-          "storage":"adobe"
+          "href": (this.sku == "1019") ? 'https://www.placethemoment.com/highres/celestial.png' : this.mapFile,
+          "storage":"dropbox"
         },
         "smartObject" : {                
           "type" : "image/png"
@@ -543,102 +610,101 @@ export default {
       }
     },
     adobeTextObject(poster){
-
-      return {
-        "inputs": [
-          {
-            "href": `/files/PTM/Templates/PTM-${poster.size}-XXXX-1-NL-nl.psd`,
-            "storage": "adobe"
+          return {
+            "inputs": [
+              {
+                "href": this.fileUrls.templates[poster.size],
+                "storage": "dropbox"
+              }
+            ],
+            "options":{
+              "fonts": [
+                {
+                  "href": 'https://www.placethemoment.com/fonts/OpenSans-Light.ttf',
+                  "storage": "external",
+                },
+                {
+                  "href": 'https://www.placethemoment.com/fonts/OpenSans-CondensedLight.ttf',
+                  "storage": "external",
+                }
+              ],
+              "layers":[
+                // this.editMap(poster),
+                // this.editPin(poster.marker, poster.size),
+                {
+                  // "id":225,
+                  // "edit":{},
+                  "name": "TITLE",
+                  "text":{
+                    "antiAlias": "antiAliasSharp",
+                    "content": poster.moment,
+                    "characterStyles": [
+                      { 
+                        "color": this.textColor(poster.design),
+                        "fontPostScriptName": "OpenSansCondensed-Light",
+                        "fontCaps": "allCaps",
+                        "tracking": 100,
+                      }
+                    ],
+                    "paragraphStyles": [{
+                      "align": "center"
+                    }]
+                  },
+                },
+                {
+                  // "id":226,
+                  // "edit":{},        
+                  "name": "LABEL",
+                  "text":{
+                    "content": `PTM-${poster.size}-${poster.id}-${this.designNumber(poster.design)}${this.lineItemLabel}-${poster.country.toUpperCase()}-${poster.language}`,
+                    "characterStyles": [
+                      { 
+                        "color": this.textColor(poster.design),
+                        "fontPostScriptName": "OpenSans-Light"
+                      }
+                    ]
+                  },
+                },
+                
+                {
+                  // "id":224,
+                  // "edit":{},
+                  "name": "SUBLINE",
+                  "text":{
+                    "content": poster.subline,
+                    "characterStyles": [
+                      { 
+                        "color": this.textColor(poster.design),
+                        "fontPostScriptName":"OpenSans-Light",
+                      }
+                    ]
+                  },
+                },
+                {
+                  // "id":223,
+                  // "edit":{},        
+                  "name": "TAGLINE",
+                  "text":{
+                    "content":  poster.tagline,
+                    "characterStyles": [
+                      { 
+                        "color": this.textColor(poster.design),
+                        "fontPostScriptName":"OpenSans-Light" 
+                      }
+                    ]
+                  },
+                }
+              ]
+            },
+            "outputs":[
+              {
+                "href": this.uploadLink,
+                "storage":"dropbox",
+                "type":"vnd.adobe.photoshop",
+                "overwrite":true
+              }
+            ]
           }
-        ],
-        "options":{
-          "fonts": [
-            {
-              "storage": "adobe",
-              "href": "/files/PTM/Fonts/OpenSans-Light.ttf"
-            },
-            {
-              "storage": "adobe",
-              "href": "/files/PTM/Fonts/OpenSans-CondensedLight.ttf"
-            }
-          ],
-          "layers":[
-            // this.editMap(poster),
-            // this.editPin(poster.marker, poster.size),
-            {
-              // "id":225,
-              // "edit":{},
-              "name": "TITLE",
-              "text":{
-                "antiAlias": "antiAliasSharp",
-                "content": poster.moment,
-                "characterStyles": [
-                  { 
-                    "color": this.textColor(poster.design),
-                    "fontPostScriptName": "OpenSansCondensed-Light",
-                    "fontCaps": "allCaps",
-                    "tracking": 100,
-                  }
-                ],
-                "paragraphStyles": [{
-                  "align": "center"
-                }]
-              },
-            },
-            {
-              // "id":226,
-              // "edit":{},        
-              "name": "LABEL",
-              "text":{
-                "content": `PTM-${poster.size}-${poster.id}-${this.designNumber(poster.design)}${this.lineItemLabel}-${poster.country.toUpperCase()}-${poster.language}`,
-                "characterStyles": [
-                  { 
-                    "color": this.textColor(poster.design),
-                    "fontPostScriptName": "OpenSans-Light"
-                  }
-                ]
-              },
-            },
-            
-            {
-              // "id":224,
-              // "edit":{},
-              "name": "SUBLINE",
-              "text":{
-                "content": poster.subline,
-                "characterStyles": [
-                  { 
-                    "color": this.textColor(poster.design),
-                    "fontPostScriptName":"OpenSans-Light",
-                  }
-                ]
-              },
-            },
-            {
-              // "id":223,
-              // "edit":{},        
-              "name": "TAGLINE",
-              "text":{
-                "content":  poster.tagline,
-                "characterStyles": [
-                  { 
-                    "color": this.textColor(poster.design),
-                    "fontPostScriptName":"OpenSans-Light" 
-                  }
-                ]
-              },
-            }
-          ]
-        },
-        "outputs":[
-          {
-            "href":`/files/PTM/Templates/outputs/PTM-${poster.size}-${poster.id}-${this.designNumber(poster.design)}${this.lineItemLabel}-${poster.country}-${poster.language}.psd`,
-            "storage":"adobe",
-            "type":"vnd.adobe.photoshop",
-            "overwrite":true
-          }
-        ]
-      }
     },
     adobeAdjustLayersObject(poster){
       let snow = (poster.design === 'snow') ? true : false
@@ -654,8 +720,8 @@ export default {
       return {
         "inputs": [
           {
-            "href": `/files/PTM/Templates/outputs/PTM-${poster.size}-${poster.id}-${this.designNumber(poster.design)}${this.lineItemLabel}-${poster.country}-${poster.language}.psd`,
-            "storage": "adobe"
+            "href": this.posterFile,
+            "storage": "dropbox"
           }
         ],
         "options":{
@@ -731,36 +797,36 @@ export default {
         },
         "outputs":[
           {
-            "href":`/files/PTM/Templates/outputs/PTM-${poster.size}-${poster.id}-${this.designNumber(poster.design)}${this.lineItemLabel}-${poster.country}-${poster.language}.psd`,
-            "storage":"adobe",
+            "href":this.uploadLink,
+            "storage":"dropbox",
             "type":"vnd.adobe.photoshop",
             "overwrite":true
           }
         ]
       }
     },
-    adobeActionsObject(poster){
+    adobeActionsObject(){
       return {
         "inputs": [
           {
-            "href": `/files/PTM/Templates/outputs/PTM-${poster.size}-${poster.id}-${this.designNumber(poster.design)}${this.lineItemLabel}-${poster.country}-${poster.language}.psd`,
-            "storage": "adobe"
+            "href": this.posterFile,
+            "storage": "dropbox"
           }
         ],
         "options": {
           "actions": [
             {
-              "href": "/files/PTM/Actions/PTM-Markers.atn",
-              "storage": "adobe"
+              "href": "https://www.placethemoment.com/actions/PTM-Markers.atn",
+              "storage": "external"
             }
           ]
         },
         "outputs": [
           {
-              "storage":"adobe",
+              "href": this.uploadLink,
+              "storage":"dropbox",
               "type":"vnd.adobe.photoshop",
               "overwrite":true,
-              "href": `/files/PTM/Templates/outputs/PTM-${poster.size}-${poster.id}-${this.designNumber(poster.design)}${this.lineItemLabel}-${poster.country}-${poster.language}.psd`
           }
         ]
       }
@@ -816,9 +882,18 @@ export default {
     display:flex;
     height:100%;
   }
-  ion-img {
+  ion-img
+  {
+    object-fit: cover;
+    aspect-ratio: 1/1;
     border-radius: 50%;
     overflow:hidden;
+  }
+  ion-card.ion-color-cotton ion-img,
+  ion-card.ion-color-ocean ion-img,
+  ion-card.ion-color-mauve ion-img
+  {
+    border-radius:0 !important;
   }
   ion-card-title {
     font-size:1.125rem;

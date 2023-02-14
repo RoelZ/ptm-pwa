@@ -78,6 +78,8 @@
 
 <script>
 import Vue from 'vue'
+import { Dropbox } from 'dropbox';
+import dropboxConfig from '../config/dropbox';
 import OrderList from '@/components/OrderList';
 import { weekNumber } from 'weeknumber'
 import posterMixin from '../mixins/poster'
@@ -101,7 +103,23 @@ export default {
         nextPage: 1,
         status: 'processing',
         infiniteScroll: false
+      },
+      dropbox: null,
+      fileUrls: {
+        templates: {
+          L: '',
+          S: '',
+        },
+        fonts: {
+          openSans: '',
+          openSansCondensed: '',
+        }
       }
+    }
+  },
+  provide() {
+    return {
+      fileUrls: this.fileUrls
     }
   },
   computed:{
@@ -261,7 +279,26 @@ export default {
     },    
   },  
   created () {
-    this.getOrders()
+    this.getOrders();
+
+    this.dropbox = new Dropbox(dropboxConfig);
+
+    this.dropbox.filesGetTemporaryLink({ path: `/templates/PTM-L-XXXX-1-NL-nl.psd` })
+    .then(({result}) => this.fileUrls.templates.L = result.link)
+    .catch(error => console.error(error));
+
+    this.dropbox.filesGetTemporaryLink({ path: `/templates/PTM-S-XXXX-1-NL-nl.psd` })
+    .then(({result}) => this.fileUrls.templates.S = result.link)
+    .catch(error => console.error(error));
+
+    // this.dropbox.filesGetTemporaryLink({ path: `/fonts/OpenSans-Light.ttf` })
+    // .then(({result}) => this.fileUrls.fonts.openSans = result.link)
+    // .catch(error => console.error(error));
+
+    // this.dropbox.filesGetTemporaryLink({ path: `/fonts/OpenSans-CondensedLight.ttf` })
+    // .then(({result}) => this.fileUrls.fonts.openSansCondensed = result.link)
+    // .catch(error => console.error(error));
+
   },
 }
 </script>

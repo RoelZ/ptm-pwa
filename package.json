@@ -8,12 +8,14 @@
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
+    "@adobe/jwt-auth": "^1.0.1",
     "@googlemaps/js-api-loader": "^1.11.1",
     "@googlemaps/map-loader": "^0.2.0",
     "@ionic/vue": "^0.0.9",
     "@woocommerce/woocommerce-rest-api": "^1.0.1",
     "axios": "^0.21.1",
     "core-js": "^2.6.11",
+    "dropbox": "^10.34.0",
     "firebase": "^7.23.0",
     "flag-icon-css": "^3.5.0",
     "jsonwebtoken": "^8.5.1",

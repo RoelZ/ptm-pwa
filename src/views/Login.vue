@@ -52,8 +52,7 @@
 import firebase from "firebase";
 import "../api/firebase";
 import axios from 'axios';
-import qs from 'qs';
-
+import { LOCAL_STORAGE_TOKEN_NAME } from '../constants/adobe';
 
 export default {
   name: "Login",
@@ -72,32 +71,22 @@ export default {
         .auth()
         .signInWithEmailAndPassword(this.user.email, this.user.password)
         .then(
-          () => {
-            if(!this.user.token){
-              axios.post('https://ims-na1.adobelogin.com/ims/exchange/jwt', qs.stringify({
-                  'client_id': process.env.VUE_APP_PS_CLIENT_ID,
-                  'client_secret': process.env.VUE_APP_PS_CLIENT_SECRET,
-                  'jwt_token': process.env.VUE_APP_PS_JWT_TOKEN,
-                }),
-                { headers: { 'content-type': 'application/x-www-form-urlencoded' }
-              })
-              .then((response) => {
-                console.log(response.data.access_token, response.data);
-                localStorage.token = response.data.access_token;
+          async () => {
+              try {
+                const { data } = await axios.get('https://dashboard.placethemoment.com/adobe_auth');
+
+                localStorage.setItem(LOCAL_STORAGE_TOKEN_NAME, data);
+
                 this.$router.push("/");
-              })
-              .catch((error) => {
-                console.error(error);
-              })
-            } else {
-              localStorage.token = this.user.token;
-              this.$router.push("/");
+              } catch(e) {
+                console.error(e.error);
+              }
             }
-          },
-          (err) => {
-            alert(err.message);
-          }
-        );
+          )
+          .catch((err) => {
+            console.error(err.message);
+          })
+
       e.preventDefault();
     },
   },

@@ -1,6 +1,28 @@
+import { Dropbox } from 'dropbox';
+
 export default {
+  data() {
+    return {
+      dropbox: null
+    }
+  },
+
   methods: {
+    getDropbox() {
+      this.dropbox = new Dropbox({ 
+        clientId: 'vfgugwpf43b1mx5',
+        clientSecret: 'i5xojbafafdkk27',
+        refreshToken: 'gRGUGs9dLBgAAAAAAAAAAUd8sNlvfCBAq5T123JidkRW1OiOu_1NXvzoAL46XUoW'
+      });
+
+      console.log(this.dropbox)
+    },
+
     createMap(poster, split){
+      console.log('Create map')
+
+      this.getDropbox();
+
       this.$photoshop.post('/renditionCreate',this.mapObject(poster.id, this.designNumber(poster), split ? split : poster.highres))
         .then(response => this.getAdobeStatus(response.data._links.self.href))
         .catch(error => {
@@ -89,20 +111,17 @@ export default {
       });
     },
     mapObject(posterid, lineitem, designNumber, posterurl){
-      
-      this.$dropbox.post('/2/files/get_temporary_upload_link', 
-      {
-        "commit_info": {
-            "path": `/maps/${posterid}-${designNumber}${this.lineItemLabel(lineitem)}.png`,
+      this.dropbox.filesGetTemporaryUploadLink(
+        {
+          'commit_info': {
+            path: `/maps/${posterid}-${designNumber}${this.lineItemLabel(lineitem)}.png`,
             "mode": {
-                ".tag": "add"
+              ".tag": "add"
             },
-            "autorename": true
+            autorename: true
+          }
         }
-      })
-      .then(response => {
-        console.log(response.data);
-
+      ).then(({ result }) => {
         return {
         "inputs": [
           {
@@ -112,7 +131,7 @@ export default {
         ],
         "outputs":[
           {
-            "href":response.data['content-hash'],
+            "href":result.link,
             "storage":"dropbox",
             "type":"image/png",
             "width":0,

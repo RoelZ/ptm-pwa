@@ -73,7 +73,7 @@ export default {
         console.log('meer');
 
       let express = RegExp('Express*').test(this.poster.shipping_lines[0].method_title);
-      // let size = (this.poster.line_items[0].meta_data[0].value == '30x40') ? 'S' : 'L'
+      // let size = (this.poster.line_items[0].meta_data[0].value == '30x40cm') ? 'S' : 'L'
 
       // onderstaande gaat fout wanneer er een line_item mist (meta_data[7], meta_data[8], etc)
       // onderstaande mist meerder items in cart (line_items[0])
@@ -117,7 +117,7 @@ export default {
       },
     getLineItem(index){
       let express = RegExp('Express*').test(this.poster.shipping_lines[0].method_title);
-      let size = (this.poster.line_items[index].meta_data[0].value == '30x40') ? 'S' : 'L'
+      let size = (this.poster.line_items[index].meta_data[0].value == '30x40cm') ? 'S' : 'L'
 
       // onderstaande gaat fout wanneer er een line_item mist (meta_data[7], meta_data[8], etc)
       // onderstaande mist meerder items in cart (line_items[0])

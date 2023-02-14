@@ -1,0 +1,1 @@
+export const LOCAL_STORAGE_TOKEN_NAME = 'adobe_token';

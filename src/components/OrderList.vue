@@ -106,8 +106,8 @@ export default {
               : item.meta_data[0].value === "dustyrose"
               ? 5
               : 6,
-          size: item.meta_data[1].value == "30x40" ? "S" : "L",
-          language: item.meta_data[14].value,
+          size: item.meta_data[1].value == "30x40cm" ? "S" : "L",
+          language: item.meta_data[9].value,
         };
       }
       return {
@@ -121,26 +121,26 @@ export default {
             : item.meta_data[0].value === "mint"
             ? 3
             : 4,
-        size: item.meta_data[1].value == "30x40" ? "S" : "L",
-        language: item.meta_data[12].value,
+        size: item.meta_data[1].value == "30x40cm" ? "S" : "L",
+        language: item.meta_data[13].value,
       };
     },
     frameItem(item) {
-      return item.variation_id === 9772 || item.variation_id === 9630
+      return item.variation_id === 12686 || item.variation_id === 14710
         ? "HOS"
-        : item.variation_id === 9773 || item.variation_id === 9631
+        : item.variation_id === 12687 || item.variation_id === 14711
         ? "HOL"
-        : item.variation_id === 9774 || item.variation_id === 9632
+        : item.variation_id === 12688 || item.variation_id === 14712
         ? "HBS"
-        : item.variation_id === 9775 || item.variation_id === 9633
+        : item.variation_id === 12689 || item.variation_id === 14713
         ? "HBL"
-        : item.variation_id === 12014 || item.variation_id === 12003
+        : item.variation_id === 12694 || item.variation_id === 14701
         ? "FOS"
-        : item.variation_id === 12015 || item.variation_id === 12004
+        : item.variation_id === 12695 || item.variation_id === 14703
         ? "FOL"
-        : item.variation_id === 12016 || item.variation_id === 12005
+        : item.variation_id === 12696 || item.variation_id === 14704
         ? "FBS"
-        : item.variation_id === 12182 || item.variation_id === 12006
+        : item.variation_id === 12697 || item.variation_id === 14702
         ? "FBL"
         : "fout";
     },
