@@ -73,7 +73,7 @@ export default {
         .then(
           async () => {
               try {
-                const { data } = await axios.get('https://dashboard.placethemoment.com/adobe_auth');
+                const { data } = await axios.get('/adobe_auth/');
 
                 localStorage.setItem(LOCAL_STORAGE_TOKEN_NAME, data);
 

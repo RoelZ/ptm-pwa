@@ -8,12 +8,20 @@
     ],
     "rewrites": [
       {
-        "source": "**",
+        "source": "/adobe_auth/**",
+        "function": "adobe_auth"
+      },
+      {
+        "source": "/celestial/**",
+        "function": "celestial"
+      },
+      {
+        "source": "!/adobe_auth/**",
         "destination": "/index.html"
       },
       {
-        "source": "/adobe_auth",
-        "function": "adobe_auth"
+        "source": "!/celestial/**",
+        "destination": "/index.html"
       }
     ]
   },

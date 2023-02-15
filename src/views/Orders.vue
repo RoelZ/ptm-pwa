@@ -107,13 +107,15 @@ export default {
       dropbox: null,
       fileUrls: {
         templates: {
-          L: '',
-          S: '',
+          classic: {
+            L: '',
+            S: '',
+          },
+          modern: {
+            L: '',
+            S: '',
+          }
         },
-        fonts: {
-          openSans: '',
-          openSansCondensed: '',
-        }
       }
     }
   },
@@ -284,20 +286,20 @@ export default {
     this.dropbox = new Dropbox(dropboxConfig);
 
     this.dropbox.filesGetTemporaryLink({ path: `/templates/PTM-L-XXXX-1-NL-nl.psd` })
-    .then(({result}) => this.fileUrls.templates.L = result.link)
+    .then(({result}) => this.fileUrls.templates.classic.L = result.link)
     .catch(error => console.error(error));
 
     this.dropbox.filesGetTemporaryLink({ path: `/templates/PTM-S-XXXX-1-NL-nl.psd` })
-    .then(({result}) => this.fileUrls.templates.S = result.link)
+    .then(({result}) => this.fileUrls.templates.classic.S = result.link)
     .catch(error => console.error(error));
 
-    // this.dropbox.filesGetTemporaryLink({ path: `/fonts/OpenSans-Light.ttf` })
-    // .then(({result}) => this.fileUrls.fonts.openSans = result.link)
-    // .catch(error => console.error(error));
+    this.dropbox.filesGetTemporaryLink({ path: `/templates/PTM-L-YYYY-1-NL-nl.psd` })
+    .then(({result}) => this.fileUrls.templates.modern.L = result.link)
+    .catch(error => console.error(error));
 
-    // this.dropbox.filesGetTemporaryLink({ path: `/fonts/OpenSans-CondensedLight.ttf` })
-    // .then(({result}) => this.fileUrls.fonts.openSansCondensed = result.link)
-    // .catch(error => console.error(error));
+    this.dropbox.filesGetTemporaryLink({ path: `/templates/PTM-S-YYYY-1-NL-nl.psd` })
+    .then(({result}) => this.fileUrls.templates.modern.S = result.link)
+    .catch(error => console.error(error));
 
   },
 }

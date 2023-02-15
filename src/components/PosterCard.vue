@@ -105,12 +105,11 @@ export default {
           id: this.poster.id,
           size,
           design: this.poster.line_items[this.lineItem].meta_data[0].value,
-          // marker: this.poster.line_items[this.lineItem].meta_data[6].value,
           moment: this.poster.line_items[this.lineItem].meta_data[5].value,
           subline: this.poster.line_items[this.lineItem].meta_data[6].value,
           tagline: this.poster.line_items[this.lineItem].meta_data[7].value,
           lowres: this.poster.line_items[this.lineItem].meta_data[8].value,
-          // highres: this.poster.line_items[this.lineItem].meta_data[11].value.match(/"(.*?)"/gi)[0].slice(1,-1),
+          highres: `https://dashboard.placethemoment.com/celestial/?id=${this.poster.id}&design=${this.poster.line_items[this.lineItem].meta_data[0].value}&location=${this.poster.line_items[this.lineItem].meta_data[3].value}&datetime=${this.poster.line_items[this.lineItem].meta_data[4].value}`,
           hash: this.poster.cart_hash,
           language: this.poster.line_items[this.lineItem].meta_data[9].value,
           country: this.poster.shipping.country,
@@ -131,7 +130,6 @@ export default {
         subline: this.poster.line_items[this.lineItem].meta_data[9].value,
         tagline: this.poster.line_items[this.lineItem].meta_data[10].value,
         lowres: this.poster.line_items[this.lineItem].meta_data[11].value,
-        // highres: this.poster.line_items[this.lineItem].meta_data[12].value.match(/"(.*?)"/gi)[0].slice(1,-1),
         highres: this.poster.line_items[this.lineItem].meta_data[12].value,
         hash: this.poster.cart_hash,
         language: this.poster.line_items[this.lineItem].meta_data[13].value,
@@ -240,7 +238,7 @@ export default {
       this.getDropbox();
 
       const posterurl = split ? split : poster.highres;
-      
+
       this.dropbox.filesGetTemporaryUploadLink({
           'commit_info': {
             path: `/maps/${poster.id}-${this.designNumber(poster.design)}${this.lineItemLabel}.png`,
@@ -329,7 +327,7 @@ export default {
       })
     },
     async getAdobeStatus(url, poster, next){
-      const msg = poster ? `Creating PTM-${poster.size}-${poster.id}-${this.designNumber(poster.design)}${this.lineItemLabel}-${this.posterItem.country}-${this.posterItem.language}.psd <ion-spinner name="dots" style="vertical-align: middle"></ion-spinner>` : 'Generating high-resolution map  <ion-spinner name="dots" style="vertical-align: middle"></ion-spinner>';
+      const msg = poster ? `<div style="display:flex; align-items:center;"><span>Creating PTM-${poster.size}-${poster.id}-${this.designNumber(poster.design)}${this.lineItemLabel}-${this.posterItem.country}-${this.posterItem.language}.psd</span> <ion-spinner name="dots" style="vertical-align: middle"></ion-spinner></div>` : '<div style="display:flex; align-items:center;"><span>Generating high-resolution map</span>  <ion-spinner name="dots" style="vertical-align: middle"></ion-spinner></div>';
       const getStatus = await this.$photoshop.get(url);
       getStatus.data.outputs.forEach(item => {
         if(item.status === 'running'){
@@ -351,7 +349,8 @@ export default {
         } else if(item.status === 'failed'){
           this.loading = false
           this.$ionic.toastController.dismiss();
-          this.openToast(item.status, `${item.errors.code}: ${item.errors.title}`)
+          const reason = (item.errors.details) ?  `- ${item.errors.details[0].reason}` : '';
+          this.openToast(item.status, `[${item.errors.code}] ${item.errors.title} ${reason}`)
           // item.errors.details.forEach(error => this.presentAlert(item.errors.title, error.name, error.reason));
         }
         else if(item.status === 'succeeded'){
@@ -482,7 +481,7 @@ export default {
            : { "rgb": { "blue": 70, "green": 174, "red": 216 } }    
     },
     textColor(design) {
-      return (design === 'snow' || design === 'honey' || design === 'hay') ? this.adobeColor('black')
+      return (design === 'snow' || design === 'honey' || design === 'hay' || design === 'cotton' || design === 'ocean' || design === 'mauve') ? this.adobeColor('black')
            : (design === 'granite' || design === 'mint') ? this.adobeColor('snow')
            : (design === 'olive') ? this.adobeColor('olive')
            : (design === 'redwood') ? this.adobeColor('redwood')
@@ -515,8 +514,12 @@ export default {
            : 4
     },
     editMap(poster){
+      const cotton = (poster.design === 'cotton') ? true : false
+      const ocean = (poster.design === 'ocean') ? true : false
+      const mauve = (poster.design === 'mauve') ? true : false
+
       return {
-        "id": (poster.size === 'L') ? 835 : 823,
+        "id": (cotton || ocean || mauve) ? (poster.size === 'L') ? 899 : 834 : (poster.size === 'L') ? 835 : 823,
         "edit":{},
         "index": 14,
         "locked":false,
@@ -524,19 +527,22 @@ export default {
         "name": "MAP",
         "visible": true,
         "input":{
-          "href": (this.sku == "1019") ? 'https://www.placethemoment.com/highres/celestial.png' : this.mapFile,
+          "href": this.mapFile,
           "storage":"dropbox"
         },
-        "smartObject" : {                
-          "type" : "image/png"
+        "smartObject" : {
+          "linked": true
         },
-        "attributes":{
-          "bounds":{
-            "height": (poster.size === 'L') ? 4729 : 2880,
-            "left": (poster.size === 'L') ? 662 : 404,
-            "top": (poster.size === 'L') ? 945 : 523,
-            "width": (poster.size === 'L') ? 4727 : 2880
-          },
+        "bounds": (cotton || ocean || mauve) ? {
+          "height": (poster.size === 'L') ? 7191 : 4143,
+          "left": (poster.size === 'L') ? 316 : 226,
+          "top": (poster.size === 'L') ? 355 : 226,
+          "width": (poster.size === 'L') ? 5417 : 3233
+        } : {
+          "height": (poster.size === 'L') ? 4729 : 2880,
+          "left": (poster.size === 'L') ? 662 : 404,
+          "top": (poster.size === 'L') ? 945 : 523,
+          "width": (poster.size === 'L') ? 4727 : 2880
         },
       }
     },
@@ -610,101 +616,112 @@ export default {
       }
     },
     adobeTextObject(poster){
-          return {
-            "inputs": [
-              {
-                "href": this.fileUrls.templates[poster.size],
-                "storage": "dropbox"
-              }
-            ],
-            "options":{
-              "fonts": [
-                {
-                  "href": 'https://www.placethemoment.com/fonts/OpenSans-Light.ttf',
-                  "storage": "external",
-                },
-                {
-                  "href": 'https://www.placethemoment.com/fonts/OpenSans-CondensedLight.ttf',
-                  "storage": "external",
-                }
-              ],
-              "layers":[
-                // this.editMap(poster),
-                // this.editPin(poster.marker, poster.size),
-                {
-                  // "id":225,
-                  // "edit":{},
-                  "name": "TITLE",
-                  "text":{
-                    "antiAlias": "antiAliasSharp",
-                    "content": poster.moment,
-                    "characterStyles": [
-                      { 
-                        "color": this.textColor(poster.design),
-                        "fontPostScriptName": "OpenSansCondensed-Light",
-                        "fontCaps": "allCaps",
-                        "tracking": 100,
-                      }
-                    ],
-                    "paragraphStyles": [{
-                      "align": "center"
-                    }]
-                  },
-                },
-                {
-                  // "id":226,
-                  // "edit":{},        
-                  "name": "LABEL",
-                  "text":{
-                    "content": `PTM-${poster.size}-${poster.id}-${this.designNumber(poster.design)}${this.lineItemLabel}-${poster.country.toUpperCase()}-${poster.language}`,
-                    "characterStyles": [
-                      { 
-                        "color": this.textColor(poster.design),
-                        "fontPostScriptName": "OpenSans-Light"
-                      }
-                    ]
-                  },
-                },
-                
-                {
-                  // "id":224,
-                  // "edit":{},
-                  "name": "SUBLINE",
-                  "text":{
-                    "content": poster.subline,
-                    "characterStyles": [
-                      { 
-                        "color": this.textColor(poster.design),
-                        "fontPostScriptName":"OpenSans-Light",
-                      }
-                    ]
-                  },
-                },
-                {
-                  // "id":223,
-                  // "edit":{},        
-                  "name": "TAGLINE",
-                  "text":{
-                    "content":  poster.tagline,
-                    "characterStyles": [
-                      { 
-                        "color": this.textColor(poster.design),
-                        "fontPostScriptName":"OpenSans-Light" 
-                      }
-                    ]
-                  },
-                }
-              ]
-            },
-            "outputs":[
-              {
-                "href": this.uploadLink,
-                "storage":"dropbox",
-                "type":"vnd.adobe.photoshop",
-                "overwrite":true
-              }
-            ]
+      const cotton = (poster.design === 'cotton') ? true : false
+      const ocean = (poster.design === 'ocean') ? true : false
+      const mauve = (poster.design === 'mauve') ? true : false
+    
+      return {
+        "inputs": [
+          {
+            "href": (cotton || ocean || mauve) ? this.fileUrls.templates.modern[poster.size] : this.fileUrls.templates.classic[poster.size],
+            "storage": "dropbox"
           }
+        ],
+        "options":{
+          "fonts": [
+            {
+              "href": 'https://www.placethemoment.com/fonts/OpenSans-Light.ttf',
+              "storage": "external",
+            },
+            {
+              "href": 'https://www.placethemoment.com/fonts/OpenSans-CondensedLight.ttf',
+              "storage": "external",
+            },
+            {
+              "href": 'https://www.placethemoment.com/fonts/Montserrat-Regular.ttf',
+              "storage": "external",
+            }
+          ],
+          "layers":[
+            // this.editMap(poster),
+            // this.editPin(poster.marker, poster.size),
+            {
+              // "id":225,
+              // "edit":{},
+              "name": "TITLE",
+              "text":{
+                "antiAlias": "antiAliasSharp",
+                "content": poster.moment,
+                "characterStyles": [
+                  { 
+                    "color": this.textColor(poster.design),
+                    "fontPostScriptName": (cotton || ocean || mauve) ? "Montserrat-Regular" : "OpenSansCondensed-Light",
+                    "fontCaps": "allCaps",
+                    "tracking": (cotton || ocean || mauve) ? 600 : 100,
+                  }
+                ],
+                "paragraphStyles": [{
+                  "align": (cotton || ocean || mauve) ? "left" : "center"
+                }]
+              },
+              "visible": poster.moment.length ? true : false
+            },
+            {
+              // "id":226,
+              // "edit":{},        
+              "name": "LABEL",
+              "text":{
+                "content": `PTM-${poster.size}-${poster.id}-${this.designNumber(poster.design)}${this.lineItemLabel}-${poster.country.toUpperCase()}-${poster.language}`,
+                "characterStyles": [
+                  { 
+                    "color": this.textColor(poster.design),
+                    "fontPostScriptName": "OpenSans-Light"
+                  }
+                ]
+              },
+            },
+            
+            {
+              // "id":224,
+              // "edit":{},
+              "name": "SUBLINE",
+              "text":{
+                "content": poster.subline,
+                "characterStyles": [
+                  { 
+                    "color": this.textColor(poster.design),
+                    "fontPostScriptName": (cotton || ocean || mauve) ? "Montserrat-Regular" : "OpenSans-Light",
+                  }
+                ]
+              },
+              "visible": poster.subline.length ? true : false
+            },
+            {
+              // "id":223,
+              // "edit":{},        
+              "name": "TAGLINE",
+              "text":{
+                "content":  poster.tagline,
+                "characterStyles": [
+                  { 
+                    "color": this.textColor(poster.design),
+                    "fontPostScriptName": (cotton || ocean || mauve) ? "Montserrat-Regular" : "OpenSans-Light" 
+                  }
+                ]
+              },
+              "visible": poster.tagline.length ? true : false
+            }
+          ]
+        },
+        "outputs":[
+          {
+            "href": this.uploadLink,
+            "storage":"dropbox",
+            "type":"vnd.adobe.photoshop",
+            "overwrite":true
+          }
+        ]
+      }
     },
     adobeAdjustLayersObject(poster){
       let snow = (poster.design === 'snow') ? true : false
