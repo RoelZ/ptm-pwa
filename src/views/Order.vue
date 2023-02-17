@@ -49,38 +49,62 @@
             <h1>Items ordered</h1>
           </ion-label>
         </ion-item>
-        <ion-item v-for="item in poster.orderData.line_items" :key="item.id">
-          <ion-label v-if="item.sku == '1015'">
-            <ion-text>
+        <ion-item-group v-for="item in poster.orderData.line_items" :key="item.id">
+          <ion-item>
+            <ion-label>
               {{item.quantity}}x {{item.parent_name}} 
               <ion-chip><ion-label>{{item.meta_data[0].display_value}}</ion-label></ion-chip> 
               <ion-chip><ion-label>{{item.meta_data[1].display_value}}</ion-label></ion-chip> 
-            </ion-text>
-            <p>{{item.meta_data[8].display_value}}</p>
-            <p>{{item.meta_data[9].display_value}}</p>
-            <p>{{item.meta_data[10].display_value}}</p>
-            <ion-button :href="`https://developers.google.com/maps/documentation/javascript/examples/geocoding-place-id${item.meta_data[10].display_value}`">Place ID</ion-button>
-            <ion-button :href="item.meta_data[10].display_value">Place ID</ion-button>
-          </ion-label>
-          <ion-label v-else>
-            <p>{{item.meta_data}}</p>
-            <p>{{item.meta_data['pa_size']}}</p>
-          </ion-label>
-        </ion-item>
+              <ion-chip v-if="item.sku == '1015'"><ion-label>{{item.meta_data[7].display_value}}</ion-label></ion-chip> 
+            </ion-label>
+          </ion-item>
+          <ion-item v-if="item.sku == '1019'">
+            <ion-label>
+              <p>{{item.meta_data[5].value}}</p>
+              <p>{{item.meta_data[6].value}}</p>
+              <p>{{item.meta_data[7].value}}</p>
+            </ion-label>
+          </ion-item>
+          <ion-item v-else-if="item.sku == '1015'">
+            <ion-label>
+              <p>{{item.meta_data[8].display_value}}</p>
+              <p>{{item.meta_data[9].display_value}}</p>
+              <p>{{item.meta_data[10].display_value}}</p>
+            </ion-label>
+          </ion-item>
+        </ion-item-group>
         <ion-item>
           <ion-label>
             <h1>Technology</h1>
           </ion-label>
         </ion-item>
-        <ion-item>
-          <ion-label>
-            <ion-text>User agent</ion-text>
-            <p>{{showPlatform}}</p>
-            <p>{{poster.orderData.customer_ip_address}}</p>
-          </ion-label>
-        </ion-item>
-        <ion-item>
-          <ion-button @click="openModal">show raw data</ion-button>
+        <ion-item-group>
+          <ion-item>
+            <ion-label>
+              <ion-text>User agent</ion-text>
+              <p>{{showPlatform}}</p>
+              <p>{{poster.orderData.customer_ip_address}}</p>
+            </ion-label>
+          </ion-item>
+          <ion-item v-for="item in poster.orderData.line_items" :key="item.id">
+            <ion-label v-if="item.sku == '1019' || item.sku == '1015'">
+              <ion-text>Location data</ion-text>
+              <p v-if="item.sku == '1019'">{{item.meta_data[3].value}}</p>
+              <p v-if="item.sku == '1019'">{{item.meta_data[4].value}}</p>
+              
+              <p v-if="item.sku == '1015'"><span>Coordinates: </span>{{item.meta_data[4].display_value}}</p>
+              <p v-if="item.sku == '1015'"><span>Marker: </span>{{item.meta_data[6].display_value}}</p>
+              <p v-if="item.sku == '1015'"><span>Zoom: </span>{{item.meta_data[5].display_value}}</p>
+            </ion-label>
+          </ion-item>
+        </ion-item-group>
+        <ion-item v-for="item in poster.orderData.line_items" :key="item.id">
+            <ion-button v-if="item.sku == '1019' || item.sku == '1015'" @click="openModal">show raw data</ion-button>
+            <ion-button v-if="item.sku == '1019' && item.meta_data[2].value" target="_blank" :href="`https://www.placethemoment.com/api/v2/json.php?place_id=${item.meta_data[2].value}`"> geolocation </ion-button>
+            <ion-button v-if="item.sku == '1019'" target="_blank" :href="`https://dashboard.placethemoment.com/celestial/?id=${item.id}&design=${item.meta_data[0].value}&location=${item.meta_data[3].value}&datetime=${item.meta_data[4].value}`"> map </ion-button>
+            
+            <ion-button v-if="item.sku == '1015' && item.meta_data[3].value" :href="`https://www.placethemoment.com/api/v2/json.php?place_id=${item.meta_data[3].value}`" target="_blank"> geoocation </ion-button>
+            <ion-button v-if="item.sku == '1015'" :href="item.meta_data[12].value" target="_blank"> map </ion-button>
         </ion-item>
       </ion-list>
     </ion-content>
@@ -184,4 +208,13 @@ export default {
 ion-avatar {
   --size: 24px;
 }
+ion-label > p {
+  margin-left: .5rem;
+  user-select: all;
+  cursor: default;
+}
+ion-label ion-chip ~ ion-label {
+  margin-top: .5rem;
+}
+
 </style>

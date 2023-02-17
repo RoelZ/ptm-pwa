@@ -808,7 +808,7 @@ export default {
               "id": (poster.size === 'L') ? 816 : 818,
               "edit":{},        
               "name": "KABANA BG",
-              "visible": this.sku == "1019"
+              "visible": (olive || hay || redwood || dustyrose) ? true : false
             }
             ]
         },
