@@ -93,18 +93,12 @@ export default {
       if (item.sku == 1019) {
         return {
           design:
-            item.meta_data[0].value === "moon"
-              ? 0
-              : item.meta_data[0].value === "granite"
-              ? 1
-              : item.meta_data[0].value === "olve"
-              ? 2
-              : item.meta_data[0].value === "hay"
-              ? 3
-              : item.meta_data[0].value === "redwood"
-              ? 4
-              : item.meta_data[0].value === "dustyrose"
-              ? 5
+            item.meta_data[0].value === "moon" ? 0
+              : item.meta_data[0].value === "granite" ? 1
+              : item.meta_data[0].value === "olive" ? 2
+              : item.meta_data[0].value === "hay" ? 3
+              : item.meta_data[0].value === "redwood" ? 4
+              : item.meta_data[0].value === "dustyrose" ? 5
               : 6,
           size: item.meta_data[1].value == "30x40cm" ? "S" : "L",
           language: item.meta_data[9].value,
@@ -112,15 +106,13 @@ export default {
       }
       return {
         design:
-          item.meta_data[0].value === "snow"
-            ? 0
-            : item.meta_data[0].value === "moon"
-            ? 1
-            : item.meta_data[0].value === "granite"
-            ? 2
-            : item.meta_data[0].value === "mint"
-            ? 3
-            : 4,
+          item.meta_data[0].value === "snow" ? 0
+            : item.meta_data[0].value === "moon" ? 1
+            : item.meta_data[0].value === "granite" ? 2
+            : (item.meta_data[0].value === "cotton" || item.meta_data[0].value === "mint") ? 3
+            : item.meta_data[0].value === "mauve" ? 4
+            : item.meta_data[0].value === "ocean" ? 5
+            : 6,
         size: item.meta_data[1].value == "30x40cm" ? "S" : "L",
         language: item.meta_data[13].value,
       };

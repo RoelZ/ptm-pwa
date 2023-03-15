@@ -11,7 +11,7 @@
         <ion-chip outline>
           <ion-label>{{posterItem.country}}</ion-label>
         </ion-chip>
-        <ion-chip class="ion-color ion-color-danger" v-if="posterItem.notes" @click="createModal()">
+        <ion-chip class="ion-color" :class="{ 'ion-color-danger' : posterItem.notes }" @click="createModal()">
           <ion-icon name="mail-unread" class="ion-no-margin"></ion-icon>
         </ion-chip>
       </ion-card-header>
@@ -185,6 +185,9 @@ export default {
     }
   },
   methods: {
+    getOrderNotes(){
+
+    },
     toggleSelected(){
       this.selected = !this.selected;
     },
@@ -205,7 +208,7 @@ export default {
     createModal() {
       let ComponentClass = Vue.extend(OrderComments)
       let ComponentInstance = new ComponentClass({
-          propsData: { order: this.id, customerNote: this.posterItem.notes }
+          propsData: { order: this.posterItem.id, customerNote: this.posterItem.notes }
       })
       ComponentInstance.$mount()
 
@@ -505,13 +508,16 @@ export default {
               : (design === 'olive') ? 2 
               : (design === 'hay') ? 3 
               : (design === 'redwood') ? 4
-              : 5
+              : (design === 'dustyrose') ? 5
+              : 6
       }
       return (design === 'snow') ? 0 
            : (design === 'moon') ? 1 
            : (design === 'granite') ? 2 
-           : (design === 'mint') ? 3 
-           : 4
+           : (design === 'cotton' || design === 'mint') ? 3
+           : (design === 'mauve') ? 4
+           : (design === 'ocean') ? 5
+           : 5
     },
     editMap(poster){
       const cotton = (poster.design === 'cotton') ? true : false

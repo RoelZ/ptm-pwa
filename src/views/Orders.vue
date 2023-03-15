@@ -58,7 +58,7 @@
                     <poster-card :line-item="index" :poster="order" :sku="poster.sku" :key="poster.id" :zomaar="selected" />
                   </ion-slide>
                 </ion-slides>
-                <poster-card v-else :poster="order" :sku="order.line_items[0].sku" :key="order.id" :zomaar="selected" />
+                <poster-card v-else ref="posterComponent" :poster="order" :sku="order.line_items[0].sku" :key="order.id" :zomaar="selected" />
               </div>
             </div>
           </ion-col>
@@ -302,6 +302,12 @@ export default {
     .catch(error => console.error(error));
 
   },
+  mounted() {
+    this.$nextTick(() => {
+    console.log(this.$refs.posterComponent);
+
+    })
+  }
 }
 </script>
 

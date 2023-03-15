@@ -1,4 +1,5 @@
 import { Dropbox } from 'dropbox';
+import dropboxConfig from '../config/dropbox';
 
 export default {
   data() {
@@ -9,58 +10,103 @@ export default {
 
   methods: {
     getDropbox() {
-      this.dropbox = new Dropbox({ 
-        clientId: 'vfgugwpf43b1mx5',
-        clientSecret: 'i5xojbafafdkk27',
-        refreshToken: 'gRGUGs9dLBgAAAAAAAAAAUd8sNlvfCBAq5T123JidkRW1OiOu_1NXvzoAL46XUoW'
-      });
-
-      console.log(this.dropbox)
+      this.dropbox = new Dropbox(dropboxConfig);
     },
 
     createMap(poster, split){
-      console.log('Create map')
-
       this.getDropbox();
 
-      this.$photoshop.post('/renditionCreate',this.mapObject(poster.id, this.designNumber(poster), split ? split : poster.highres))
+      const posterurl = split ? split : poster.highres;
+
+      this.dropbox.filesGetTemporaryUploadLink({
+          'commit_info': {
+            path: `/maps/${poster.id}-${this.designNumber(poster.design)}${this.lineItemLabel}.png`,
+            "mode": {
+              ".tag": "overwrite"
+            },
+            autorename: false
+          }
+      }).then(({ result }) => {
+        this.$photoshop.post('/renditionCreate',this.mapObject(posterurl, result.link))
         .then(response => this.getAdobeStatus(response.data._links.self.href))
         .catch(error => {
           this.openToast('failed', error.message, [{ side: 'start', text: 'Retry', handler: () => this.createMap(poster, poster.highres.split('?',1))}, { side: 'end', text: 'Close', handler: () => this.dismiss }])
         });
+      })
+      .catch(error => {
+        console.error(error);
+        this.openToast('failed', error.error_summary, [{ side: 'end', text: 'Close', handler: () => this.dismiss }])
+      });
     },
+    // params: lineitem, state)
     async createPDF(poster, lineitem = 0, state = 'map'){
-      let response;
-      
-      console.log('state: ' + poster.id + ' ' + state)
-
-      if(state === 'map' && poster.sku != "1019"){
-        console.log('generate map:' + poster.id);
-        response = await this.$photoshop.post('/renditionCreate',this.mapObject(poster.id, lineitem, this.designNumber(poster), poster.highres))
-      } else {
-        console.log('generate text:' + poster.id);
-        response = await this.$photoshop.post('/text',this.adobeTextObject(poster,lineitem))
-      }
-
-      if(response.status == 202){
-        this.getAdobeStatus(response.data._links.self.href,poster,lineitem,state)
-        return
-      }
-      
-      this.openToast('failed', response.status)
-      throw new Error(response.status)
+      this.getDropbox();
+      this.dropbox.filesGetTemporaryUploadLink({
+          'commit_info': {
+            path: `/outputs/PTM-${poster.size}-${poster.id}-${this.designNumber(poster.design)}${this.lineItemLabel}-${poster.country}-${poster.language}.psd`,
+            "mode": {
+              ".tag": "overwrite"
+            },
+            autorename: false
+          }
+      }).then(({ result }) => {
+        this.uploadLink = result.link;
+        this.$photoshop.post('/text',this.adobeTextObject(poster))
+        .then(response => this.getAdobeStatus(response.data._links.self.href, poster, 'layers'))
+        .catch(error => this.openToast('failed', error.message));
+      })
     },
     async applyLayerChanges(poster, lineitem){
-      console.log('applyLayerChanges: ' + poster.id + ' ' + poster.sku);
-      await this.$photoshop.post('/documentOperations',this.adobeAdjustLayersObject(poster, lineitem))
-        .then(response => this.getAdobeStatus(response.data._links.self.href, poster, lineitem, (poster.sku != "1019") ? 'markers' : null))
-        .catch(error => this.openToast('failed', error.message));
-    },    
-    async applyActions(poster,lineitem){
-      await this.$photoshop.post('/batchPlay',this.adobeActionsObject(poster,lineitem))
-        .then(response => this.getAdobeStatus(response.data._links.self.href, poster, lineitem))
-        .catch(error => this.openToast('failed', error.message));
+      this.getDropbox();
+      this.dropbox.filesGetTemporaryLink({ path: `/outputs/PTM-${poster.size}-${poster.id}-${this.designNumber(poster.design)}${this.lineItemLabel}-${poster.country}-${poster.language}.psd` })
+      .then(({ result }) => {
+        this.posterFile = result.link;
+
+        this.dropbox.filesGetTemporaryLink({ path: `/maps/${poster.id}-${this.designNumber(poster.design)}${this.lineItemLabel}.png` })
+        .then(({ result }) => {
+          this.mapFile = result.link
+
+          this.getDropbox();
+          this.dropbox.filesGetTemporaryUploadLink({
+              'commit_info': {
+                path: `/outputs/PTM-${poster.size}-${poster.id}-${this.designNumber(poster.design)}${this.lineItemLabel}-${poster.country}-${poster.language}.psd`,
+                "mode": {
+                  ".tag": "overwrite"
+                },
+                autorename: false
+              }
+          }).then(({ result }) => {
+            this.uploadLink = result.link;
+            this.$photoshop.post('/documentOperations',this.adobeAdjustLayersObject(poster))
+              .then(response => this.getAdobeStatus(response.data._links.self.href, poster, (this.sku !== "1091") ? 'markers' : null))
+              .catch(error => this.openToast('failed', error.message));
+          })
+        })
+      })
     },
+    async applyActions(poster,lineitem){
+      this.getDropbox();
+      this.dropbox.filesGetTemporaryLink({ path: `/outputs/PTM-${poster.size}-${poster.id}-${this.designNumber(poster.design)}${this.lineItemLabel}-${poster.country}-${poster.language}.psd` })
+      .then(({ result }) => {
+        this.posterFile = result.link;
+
+        this.dropbox.filesGetTemporaryUploadLink({
+            'commit_info': {
+              path: `/outputs/PTM-${poster.size}-${poster.id}-${this.designNumber(poster.design)}${this.lineItemLabel}-${poster.country}-${poster.language}.psd`,
+              "mode": {
+                ".tag": "overwrite"
+              },
+              autorename: false
+            }
+        }).then(({ result }) => {
+          this.uploadLink = result.link;
+          this.$photoshop.post('/batchPlay',this.adobeActionsObject(poster))
+            .then(response => this.getAdobeStatus(response.data._links.self.href, poster))
+            .catch(error => this.openToast('failed', error.message));
+        })
+      })
+    },
+    // not yet overwritten
     async getAdobeStatus(url, poster, lineitem, next){
       const msg = poster ? `Creating PTM-${poster.size}-${poster.id}-${this.designNumber(poster)}${this.lineItemLabel(lineitem)}-${poster.country}-${poster.language}.psd <ion-spinner name="dots" style="vertical-align: middle"></ion-spinner>` : 'Generating high-resolution map  <ion-spinner name="dots" style="vertical-align: middle"></ion-spinner>';
       const getStatus = await this.$photoshop.get(url);
@@ -110,19 +156,8 @@ export default {
         }
       });
     },
-    mapObject(posterid, lineitem, designNumber, posterurl){
-      this.dropbox.filesGetTemporaryUploadLink(
-        {
-          'commit_info': {
-            path: `/maps/${posterid}-${designNumber}${this.lineItemLabel(lineitem)}.png`,
-            "mode": {
-              ".tag": "add"
-            },
-            autorename: true
-          }
-        }
-      ).then(({ result }) => {
-        return {
+    mapObject(posterurl, uploadlink){
+      return {
         "inputs": [
           {
             "href": posterurl,
@@ -131,7 +166,7 @@ export default {
         ],
         "outputs":[
           {
-            "href":result.link,
+            "href":uploadlink,
             "storage":"dropbox",
             "type":"image/png",
             "width":0,
@@ -139,13 +174,7 @@ export default {
             "compression":"small"
           }
         ]
-      }
-      })
-      .catch(error => {
-        this.openToast('failed', error.message, [{ side: 'end', text: 'Close', handler: () => this.dismiss }])
-      });
-
-      
+      };      
     },
     adobeTextObject(poster, lineitem){
 

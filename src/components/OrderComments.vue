@@ -8,12 +8,12 @@
       </ion-buttons>
     </ion-toolbar>
   </ion-header>
-  <ion-content ref="ionNotes" fullscreen>
-    <ion-card v-for="note in notesData" :key="note.id" padding class="ion-float-right ion-margin-bottom">
+  <ion-content ref="notes" fullscreen>
+    <ion-card v-for="note in notesData" :key="note.id" padding class="ion-float-right ion-margin-bottom ion-color ion-color-secondary">
         <ion-text color="light">{{ note.note }}</ion-text>
         <ion-text color="light"><span>{{ note.date_created }}</span></ion-text>
     </ion-card>
-    <ion-card padding v-if="customerNote" class="ion-float-right ion-margin-bottom customer">
+    <ion-card padding v-if="customerNote" class="ion-float-right ion-margin-bottom customer ion-color ion-color-primary">
         <ion-text color="light">{{ customerNote }}</ion-text>
     </ion-card>
   </ion-content>
@@ -46,6 +46,7 @@ export default {
   },
   data(){
     return {
+      loading: true,
       notesData: Array,
       note: null
     }
@@ -57,17 +58,21 @@ export default {
   },
   created() {
     if(this.order){
-      console.log(this.$refs, this.$refs['ionNotes'])
       this.$woocommerce.get(`orders/${this.order}/notes`)
-        .then(response => { this.notesData = response.data })
-        .then(this.$refs['ionNotes'].scrollToBottom(0))
+        .then(response => { 
+          this.notesData = response.data.reverse().filter(note => note.author != 'WooCommerce');
+        })
+        .then(() => this.loading = false)
         .catch(error => console.log('error', error))
     }
+  },
+  mounted() {
+    if(!this.loading) this.$refs['notes'].scrollTo(0, this.$refs['notes'].scrollHeight)
   },
   methods: {
     createNote(){
       if(this.order){
-        this.$woocommerce.post(`orders/${this.order}/notes`, `{ "note": "${this.note}" }` )
+        this.$woocommerce.post(`orders/${this.order}/notes`, JSON.stringify({ note: this.note, customer_note: false }), { note: this.note, customer_note: false })
         .then(response => { 
           this.notesData.unshift(response.data);
           console.log(response.data)
