@@ -3,7 +3,7 @@
     <ion-content padding fullscreen>
       <ion-vue-router id="menu-content" />
     </ion-content>
-    <ion-footer v-if="isLoggedIn">
+    <ion-footer v-if="$route.meta.requiresAuth">
       <h2>...</h2>
       <ion-tabs>
         <ion-tab tab="orders" :routes="'orders'"></ion-tab>
@@ -76,6 +76,7 @@ export default {
         .auth()
         .signOut()
         .then(() => {
+          this.isLoggedIn = false;
           this.$router.push("/login");
         });
     },

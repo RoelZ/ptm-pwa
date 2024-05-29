@@ -11,7 +11,13 @@
         <ion-chip outline>
           <ion-label>{{posterItem.country}}</ion-label>
         </ion-chip>
-        <ion-chip class="ion-color" :class="{ 'ion-color-danger' : posterItem.notes }" @click="createModal()">
+        <ion-chip v-show="posterFile" class="ion-color ion-color-tertiary" @click="downloadPSD(posterItem)">
+          <ion-icon name="cloud-download" class="ion-no-margin"></ion-icon>
+        </ion-chip>
+        <ion-chip v-show="posterItem.notes" class="ion-color" :class="{ 'ion-color-danger' : posterItem.notes }" @click="createModal()">
+          <ion-icon name="mail-unread" class="ion-no-margin"></ion-icon>
+        </ion-chip>
+        <ion-chip v-show="posterItem.notes" class="ion-color" :class="{ 'ion-color-danger' : posterItem.notes }" @click="createModal()">
           <ion-icon name="mail-unread" class="ion-no-margin"></ion-icon>
         </ion-chip>
       </ion-card-header>
@@ -36,14 +42,16 @@
 </template>
 
 <style>
-
+.ion-card-header {
+  padding: 1rem 0.5rem;
+}
 </style>
 
 <script>
 import Vue from 'vue'
 import OrderComments from '@/components/OrderComments';
 import { addIcons } from "ionicons";
-import { cube, cloudy, mailUnread } from "ionicons/icons";
+import { cube, cloudy, mailUnread, cloudDownload  } from "ionicons/icons";
 import poster from '../mixins/poster';
 import { Dropbox } from 'dropbox';
 import dropboxConfig from '../config/dropbox';
@@ -52,7 +60,8 @@ import dropboxConfig from '../config/dropbox';
 addIcons({
   "md-cube": cube.md,
   "md-cloudy": cloudy.md,
-  "md-mail-unread": mailUnread.md
+  "md-mail-unread": mailUnread.md,
+  "md-cloud-download": cloudDownload.md
 });
 
 export default {
@@ -90,8 +99,10 @@ export default {
   },
   computed: {
     posterItem(){
-      let express = RegExp('Express*').test(this.poster.shipping_lines[0].method_title);
-      let size = (this.poster.line_items[this.lineItem].meta_data[1].value == '30x40cm') ? 'S' : 'L'
+      let express = this.poster.shipping_lines.length ? RegExp('Express*').test(this.poster.shipping_lines[0].method_title) : false;
+      let size =  this.poster.line_items[this.lineItem].meta_data[1].value == 'digital' || this.poster.line_items[this.lineItem].meta_data[1].value == 'digitaal' ? 'DL' :
+                  this.poster.line_items[this.lineItem].meta_data[1].value == '21x30cm' ? 'XS' :
+                  this.poster.line_items[this.lineItem].meta_data[1].value == '30x40cm' ? 'S' : 'L'
 
       // onderstaande gaat fout wanneer er een line_item mist (meta_data[7], meta_data[8], etc)
       // onderstaande mist meerder items in cart (line_items[this.lineItem])
@@ -114,7 +125,7 @@ export default {
           language: this.poster.line_items[this.lineItem].meta_data[9].value,
           country: this.poster.shipping.country,
           length: (this.poster.line_items.length > 1) ? '+' : '',
-          shipping: this.poster.shipping_lines[0].method_title,
+          shipping: this.poster.shipping_lines.length ? this.poster.shipping_lines[0].method_title : '',
           express,
           labelColor: express ? 'danger' : '',        
           notes: this.poster.customer_note
@@ -135,7 +146,7 @@ export default {
         language: this.poster.line_items[this.lineItem].meta_data[13].value,
         country: this.poster.shipping.country,
         length: (this.poster.line_items.length > 1) ? '+' : '',
-        shipping: this.poster.shipping_lines[0].method_title,
+        shipping: this.poster.shipping_lines.length ? this.poster.shipping_lines[0].method_title : '',
         express,
         labelColor: express ? 'danger' : '',        
         notes: this.poster.customer_note
@@ -155,6 +166,9 @@ export default {
       }
     },
     getShipmentID(){
+      // Geen shipment_id = digitaal product
+      if(this.poster.shipping_lines.length === 0) return 0;
+
       // 1: Thuisbezorgd / Home delivery (NL)
       // 3: Home delivery (RU)
       // 7: Thuisbezorgd / Home delivery (BE, DE)
@@ -233,6 +247,16 @@ export default {
           window.URL.revokeObjectURL(url);
         })
         .catch(() => alert('Probleem bij het ophalen..')); 
+    },
+    downloadPSD(poster){
+      const url = this.posterFile;
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `PTM-${poster.size}-${poster.id}-${this.designNumber(poster.design)}${this.lineItemLabel}-${poster.country}-${poster.language}.psd`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
     },
     getDropbox() {
       this.dropbox = new Dropbox(dropboxConfig);
@@ -525,7 +549,9 @@ export default {
       const mauve = (poster.design === 'mauve') ? true : false
 
       return {
-        "id": (cotton || ocean || mauve) ? (poster.size === 'L') ? 899 : 834 : (poster.size === 'L') ? 835 : 823,
+        "id": (cotton || ocean || mauve) && (poster.size === 'L' || poster.size === 'DL') ? 899
+            : (cotton || ocean || mauve) && (poster.size === 'XS' || poster.size === 'S') ? 834
+            : (poster.size === 'L' || poster.size === 'DL') ? 835 : 823,
         "edit":{},
         "index": 14,
         "locked":false,
@@ -540,22 +566,22 @@ export default {
           "linked": true
         },
         "bounds": (cotton || ocean || mauve) ? {
-          "height": (poster.size === 'L') ? 7191 : 4143,
-          "left": (poster.size === 'L') ? 316 : 226,
-          "top": (poster.size === 'L') ? 355 : 226,
-          "width": (poster.size === 'L') ? 5417 : 3233
+          "height": (poster.size === 'L' || poster.size === 'DL') ? 7191 : poster.size === 'XS' ? 3016 : 4143,
+          "left": (poster.size === 'L' || poster.size === 'DL') ? 316 : poster.size === 'XS' ? -470 : 226,
+          "top": (poster.size === 'L' || poster.size === 'DL') ? 355 : poster.size === 'XS' ? 166 : 226,
+          "width": (poster.size === 'L' || poster.size === 'DL') ? 5417 : poster.size === 'XS' ? 2122 : 3233
         } : {
-          "height": (poster.size === 'L') ? 4729 : 2880,
-          "left": (poster.size === 'L') ? 662 : 404,
-          "top": (poster.size === 'L') ? 945 : 523,
-          "width": (poster.size === 'L') ? 4727 : 2880
+          "height": (poster.size === 'L' || poster.size === 'DL') ? 4729 : poster.size === 'XS' ? 2120 : 2880,
+          "left": (poster.size === 'L' || poster.size === 'DL') ? 662 : poster.size === 'XS' ? 180 : 404,
+          "top": (poster.size === 'L' || poster.size === 'DL') ? 945 : poster.size === 'XS' ? 380 : 523,
+          "width": (poster.size === 'L' || poster.size === 'DL') ? 4729 : poster.size === 'XS' ? 2120 : 2880
         },
       }
     },
     editPin(marker, size){
       if(this.sku == "1019"){
         return {
-          "id": (size === 'L') ? 792 : 796,
+          "id": (size === 'L' || size === 'DL') ? 792 : 796,
           "edit":{},
           "name": "HEART",
           "visible": false
@@ -564,14 +590,14 @@ export default {
 
       if(marker === 'heart'){
         return {
-          "id": (size === 'L') ? 792 : 796,
+          "id": (size === 'L' || size === 'DL') ? 792 : 796,
           "edit":{},
           "name": "HEART",
           "visible": true
         }
       } else {
         return {
-          "id": (size === 'L') ? 749 : 752,
+          "id": (size === 'L' || size === 'DL') ? 749 : 752,
           "edit":{},
           "name": "PIN",
           "visible": true,
@@ -663,7 +689,7 @@ export default {
                     "color": this.textColor(poster.design),
                     "fontPostScriptName": (cotton || ocean || mauve) ? "Montserrat-Regular" : "OpenSansCondensed-Light",
                     "fontCaps": "allCaps",
-                    "tracking": (cotton || ocean || mauve) ? 600 : 100,
+                    "tracking": (cotton || ocean || mauve) ? 500 : 100,
                   }
                 ],
                 "paragraphStyles": [{
@@ -775,19 +801,19 @@ export default {
               "visible": moon
             },
             {
-              "id": (poster.size === 'L') ? 819 : 817,
+              "id": (poster.size === 'L' || poster.size === 'DL') ? 819 : 817,
               "edit":{},        
               "name": "OLIVE LINE",
               "visible": olive
             },
             {
-              "id": (poster.size === 'L') ? 818 : 816,
+              "id": (poster.size === 'L' || poster.size === 'DL') ? 818 : 816,
               "edit":{},        
               "name": "REDWOOD LINE",
               "visible": redwood
             },
             {
-              "id": (poster.size === 'L') ? 817 : 815,
+              "id": (poster.size === 'L' || poster.size === 'DL') ? 817 : 815,
               "edit":{},        
               "name": "DUSTYROSE LINE",
               "visible": dustyrose
@@ -811,7 +837,7 @@ export default {
               "visible": honey
             },
             {
-              "id": (poster.size === 'L') ? 816 : 818,
+              "id": (poster.size === 'L' || poster.size === 'DL') ? 816 : 818,
               "edit":{},        
               "name": "KABANA BG",
               "visible": (olive || hay || redwood || dustyrose) ? true : false

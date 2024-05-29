@@ -74,10 +74,9 @@ export default {
           async () => {
               try {
                 const { data } = await axios.get('/adobe_auth/');
-
                 localStorage.setItem(LOCAL_STORAGE_TOKEN_NAME, data);
 
-                this.$router.push("/");
+                this.$router.push("/orders");
               } catch(e) {
                 console.error(e.error);
               }

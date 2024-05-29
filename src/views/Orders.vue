@@ -293,6 +293,10 @@ export default {
     .then(({result}) => this.fileUrls.templates.classic.S = result.link)
     .catch(error => console.error(error));
 
+    this.dropbox.filesGetTemporaryLink({ path: `/templates/PTM-XS-XXXX-1-NL-nl.psd` })
+    .then(({result}) => this.fileUrls.templates.classic.XS = result.link)
+    .catch(error => console.error(error));
+
     this.dropbox.filesGetTemporaryLink({ path: `/templates/PTM-L-YYYY-1-NL-nl.psd` })
     .then(({result}) => this.fileUrls.templates.modern.L = result.link)
     .catch(error => console.error(error));
@@ -301,6 +305,17 @@ export default {
     .then(({result}) => this.fileUrls.templates.modern.S = result.link)
     .catch(error => console.error(error));
 
+    this.dropbox.filesGetTemporaryLink({ path: `/templates/PTM-XS-YYYY-1-NL-nl.psd` })
+    .then(({result}) => this.fileUrls.templates.modern.XS = result.link)
+    .catch(error => console.error(error));
+
+    this.dropbox.filesGetTemporaryLink({ path: `/templates/PTM-DL-XXXX-1-NL-nl.psd` })
+    .then(({result}) => this.fileUrls.templates.classic.DL = result.link)
+    .catch(error => console.error(error));
+
+    this.dropbox.filesGetTemporaryLink({ path: `/templates/PTM-DL-YYYY-1-NL-nl.psd` })
+    .then(({result}) => this.fileUrls.templates.modern.DL = result.link)
+    .catch(error => console.error(error));
   },
   mounted() {
     this.$nextTick(() => {

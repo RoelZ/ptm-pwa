@@ -10,19 +10,21 @@
     </ion-header>
     <ion-content fullscreen>
       <ion-list>
-        <ion-item v-for="order in orders" :key="order.id">
-          <ion-label>
-            <h2>{{ order.id }}</h2>
-            <div v-for="(item, index) in order.line_items" :key="item.id">
-              <h3 v-if="item.sku == 1015 || item.sku == 1019">
-                {{ index + 1 }}. PTM-{{ posterItem(item).size }}-{{ order.id }}-{{
-                  posterItem(item).design
-                }}-{{ order.shipping.country }}-{{ posterItem(item).language }}
-              </h3>
-              <h3 v-else>{{ index + 1 }}. {{ frameItem(item) }}</h3>
-            </div>
-          </ion-label>
-        </ion-item>
+        <div v-for="order in orders" :key="order.id">
+          <ion-item v-if="order.line_items[0].meta_data[1].value != 'digital' && order.line_items[0].meta_data[1].value != 'digitaal'">
+            <ion-label>
+              <h2>{{ order.id }}</h2>
+              <div v-for="(item, index) in order.line_items" :key="item.id">
+                <h3 v-if="(item.sku == 1015 || item.sku == 1019)">
+                  {{ index + 1 }}. PTM-{{ posterItem(item).size }}-{{ order.id }}-{{
+                    posterItem(item).design
+                  }}-{{ order.shipping.country }}-{{ posterItem(item).language }}
+                </h3>
+                <h3 v-else>{{ index + 1 }}. {{ frameItem(item) }}</h3>
+              </div>
+            </ion-label>
+          </ion-item>
+        </div>
       </ion-list>
 
       <div class="card-overlay" v-if="isLoading">
@@ -100,7 +102,9 @@ export default {
               : item.meta_data[0].value === "redwood" ? 4
               : item.meta_data[0].value === "dustyrose" ? 5
               : 6,
-          size: item.meta_data[1].value == "30x40cm" ? "S" : "L",
+          size: item.meta_data[1].value == "30x40cm" ? "S" 
+          : item.meta_data[1].value == "21x30cm" ? "XS"
+          : "L",
           language: item.meta_data[9].value,
         };
       }
@@ -113,27 +117,21 @@ export default {
             : item.meta_data[0].value === "mauve" ? 4
             : item.meta_data[0].value === "ocean" ? 5
             : 6,
-        size: item.meta_data[1].value == "30x40cm" ? "S" : "L",
+        size: item.meta_data[1].value == "30x40cm" ? "S" 
+        : item.meta_data[1].value == "21x30cm" ? "XS"
+        : "L",
         language: item.meta_data[13].value,
       };
     },
     frameItem(item) {
-      return item.variation_id === 12686 || item.variation_id === 14710
-        ? "HOS"
-        : item.variation_id === 12687 || item.variation_id === 14711
-        ? "HOL"
-        : item.variation_id === 12688 || item.variation_id === 14712
-        ? "HBS"
-        : item.variation_id === 12689 || item.variation_id === 14713
-        ? "HBL"
-        : item.variation_id === 12694 || item.variation_id === 14701
-        ? "FOS"
-        : item.variation_id === 12695 || item.variation_id === 14703
-        ? "FOL"
-        : item.variation_id === 12696 || item.variation_id === 14704
-        ? "FBS"
-        : item.variation_id === 12697 || item.variation_id === 14702
-        ? "FBL"
+      return  item.variation_id === 18642 || item.variation_id === 18643 ? "HOS"
+            : item.variation_id === 18649 || item.variation_id === 18650 ? "HOL"
+            : item.variation_id === 18638 || item.variation_id === 18639 ? "HBS"
+            : item.variation_id === 18651 || item.variation_id === 18652 ? "HBL"
+            : item.variation_id === 18640 || item.variation_id === 18641 ? "FOS"
+            : item.variation_id === 12695 || item.variation_id === 14703 ? "FOL"
+            : item.variation_id === 18636 || item.variation_id === 18637 ? "FBS"
+            : item.variation_id === 12697 || item.variation_id === 14702 ? "FBL"
         : "fout";
     },
     downloadList() {

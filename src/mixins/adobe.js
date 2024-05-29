@@ -310,19 +310,19 @@ export default {
               "visible": moon
             },
             {
-              "id": (poster.size === 'L') ? 819 : 817,
+              "id": (poster.size === 'L' || poster.size === 'DL') ? 819 : 817,
               "edit":{},        
               "name": "OLIVE LINE",
               "visible": olive
             },
             {
-              "id": (poster.size === 'L') ? 818 : 816,
+              "id": (poster.size === 'L' || poster.size === 'DL') ? 818 : 816,
               "edit":{},        
               "name": "REDWOOD LINE",
               "visible": redwood
             },
             {
-              "id": (poster.size === 'L') ? 817 : 815,
+              "id": (poster.size === 'L' || poster.size === 'DL') ? 817 : 815,
               "edit":{},        
               "name": "DUSTYROSE LINE",
               "visible": dustyrose
@@ -346,7 +346,7 @@ export default {
               "visible": honey
             },
             {
-              "id": (poster.size === 'L') ? 816 : 818,
+              "id": (poster.size === 'L' || poster.size === 'DL') ? 816 : 818,
               "edit":{},        
               "name": "KABANA BG",
               "visible": poster.sku == "1019"
@@ -391,7 +391,7 @@ export default {
     },
     editMap(poster,lineitem){
       return {
-        "id": (poster.size === 'L') ? 835 : 823,
+        "id": (poster.size === 'L' || poster.size === 'DL') ? 835 : 823,
         "edit":{},
         "index": 14,
         "locked":false,
@@ -407,10 +407,10 @@ export default {
         },
         "attributes":{
           "bounds":{
-            "height": (poster.size === 'L') ? 4729 : 2880,
-            "left": (poster.size === 'L') ? 662 : 404,
-            "top": (poster.size === 'L') ? 945 : 523,
-            "width": (poster.size === 'L') ? 4727 : 2880
+            "height": (poster.size === 'L' || poster.size === 'DL') ? 4729 : 2880,
+            "left": (poster.size === 'L' || poster.size === 'DL') ? 662 : 404,
+            "top": (poster.size === 'L' || poster.size === 'DL') ? 945 : 523,
+            "width": (poster.size === 'L' || poster.size === 'DL') ? 4727 : 2880
           },
         },
       }
