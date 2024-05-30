@@ -34,18 +34,17 @@
       <div class="card-overlay" v-if="loading">
         <ion-spinner name="dots"></ion-spinner>
       </div>
+      <div v-if="item.express" class="express-levering">
+        <ion-chip color="danger" outline="false">
+          <ion-label>Express levering</ion-label>
+        </ion-chip>
+      </div>
     </ion-card>
     <div style="display:none;position:absolute;top:0;bottom:0;left:0;right:0">
       <ion-checkbox></ion-checkbox>
     </div>
   </div>
 </template>
-
-<style>
-.ion-card-header {
-  padding: 1rem 0.5rem;
-}
-</style>
 
 <script>
 import Vue from 'vue'
@@ -99,7 +98,7 @@ export default {
   },
   computed: {
     posterItem(){
-      let express = this.poster.shipping_lines.length ? RegExp('Express*').test(this.poster.shipping_lines[0].method_title) : false;
+      let express = this.poster.shipping_lines.length ? RegExp('Express*').test(this.poster.shipping_lines[0].method_title) : true;
       let size =  this.poster.line_items[this.lineItem].meta_data[1].value == 'digital' || this.poster.line_items[this.lineItem].meta_data[1].value == 'digitaal' ? 'DL' :
                   this.poster.line_items[this.lineItem].meta_data[1].value == '21x30cm' ? 'XS' :
                   this.poster.line_items[this.lineItem].meta_data[1].value == '30x40cm' ? 'S' : 'L'
@@ -549,7 +548,7 @@ export default {
       const mauve = (poster.design === 'mauve') ? true : false
 
       return {
-        "id": (cotton || ocean || mauve) && (poster.size === 'L' || poster.size === 'DL') ? 899
+        "id": (cotton || ocean || mauve) && (poster.size === 'L' || poster.size === 'DL') ? 890
             : (cotton || ocean || mauve) && (poster.size === 'XS' || poster.size === 'S') ? 834
             : (poster.size === 'L' || poster.size === 'DL') ? 835 : 823,
         "edit":{},
@@ -885,6 +884,10 @@ export default {
 </script>
 
 <style scoped>
+
+.ion-card-header {
+  padding: 1rem 0.5rem;
+}
   .scene {
     width:280px;
     height:500px;
@@ -921,6 +924,14 @@ export default {
     justify-content: center;
     pointer-events: none;
     background-color:rgba(255,255,255,.75);
+  }
+  .express-levering {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
   }
   .toast-message {    
     display: flex;
